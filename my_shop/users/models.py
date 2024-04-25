@@ -7,5 +7,5 @@ class MyUser(AbstractUser):
     adress = models.TextField(max_length=300)
 
     def get_absolute_url(self):
-        return reverse("users:profile", kwargs={"pk": self.pk})
+        return reverse("users:profile")
 

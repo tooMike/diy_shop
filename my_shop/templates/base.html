@@ -1,4 +1,7 @@
 {% load static %}
+{% load django_bootstrap5 %}
+{% with request.resolver_match.view_name as view_name %}
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -30,8 +33,17 @@
           </div>
       </div>
     </header>
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        {% block breadcrumb %}
+        {% endblock breadcrumb %}
+      </ol>
+    </nav>
+
     <!-- Content -->
     {% block content %} {% endblock content %}
     {% include "includes/footer.html" %}
   </body>
 </html>
+{% endwith %}

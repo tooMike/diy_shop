@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Ошибка сервера{% endblock %}
+
+{% block h1 %}
+  Ошибка сервера
+{% endblock h1 %}
+  
+{% block content %}
+<div class="col d-flex justify-content-center">
+  <div class="card" style="width: 40rem;">
+    <div class="card-body">
+      <p>На сервере что-то пошло не так!</p>
+      <a href="{% url 'main:index' %}">Вернуться на главную</a>
+    </div>
+  </div>
+</div>
+  
+{% endblock %}
+

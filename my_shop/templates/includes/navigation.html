@@ -5,35 +5,46 @@
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
-                <li class="nav-item"><a class="nav-link active" aria-current="page" href="{% url "main:index" %}">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="#!">About</a></li>
+                <li class="nav-item"><a class="nav-link active" aria-current="page" href="{% url "main:index" %}">Главная</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url "pages:about" %}">О компании</a></li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Shop</a>
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Категории</a>
                     <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <li><a class="dropdown-item" href="#!">All Products</a></li>
+                        <li><a class="dropdown-item" href="{% url "main:index" %}">Все товары</a></li>
                         <li><hr class="dropdown-divider" /></li>
-                        <li><a class="dropdown-item" href="#!">Popular Items</a></li>
-                        <li><a class="dropdown-item" href="#!">New Arrivals</a></li>
+                        {% for category in categories %}
+                            <li><a class="dropdown-item" href="{% url "main:category" category.slug %}">{{ category }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Производители</a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="{% url "main:index" %}">Все товары</a></li>
+                        <li><hr class="dropdown-divider" /></li>
+                        {% for manufacturer in manufacturers %}
+                            <li><a class="dropdown-item" href="{% url "main:manufacturer" manufacturer.slug %}">{{ manufacturer }}</a></li>
+                        {% endfor %}
                     </ul>
                 </li>
             </ul>
             <div class="d-flex align-items-center">
                 <!-- Это блок ссылок для авторизованного пользователя -->
                 {% if user.is_authenticated %}
-                    <span class="navbar-text" style="margin-right: 20px;">Пользователь: <a href="{% url "users:profile" user.id %}"><b>{{ user.username }}</b> </a></span>
+                    <span class="navbar-text" style="margin-right: 20px;">Пользователь: <a href="{% url "users:profile" %}"><b>{{ user.username }}</b> </a></span>
                     <a href="{% url "logout" %}" class="btn btn-outline-dark me-2">Выйти</a>
                 <!-- Конец блока ссылок для авторизованного пользователя -->
 
                 <!-- А здесь блок ссылок для неавторизованного пользователя -->
                 {% else %}
-                        <a href="{% url "login" %}" class="btn btn-outline-dark me-2">Login</a>
-                        <a href="{% url "users:registration" %}" class="btn btn-outline-dark me-2">Register</a>
+                        <a href="{% url "login" %}" class="btn btn-outline-dark me-2">Войти</a>
+                        <a href="{% url "users:registration" %}" class="btn btn-outline-dark me-2">Регистрация</a>
                 {% endif %}
 
                 <form class="d-flex">
                     <button class="btn btn-outline-dark" type="submit">
                         <i class="bi-cart-fill me-1"></i>
-                        Cart
+                        Корзина
                         <span class="badge bg-dark text-white ms-1 rounded-pill">0</span>
                     </button>
                 </form>

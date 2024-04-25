@@ -16,3 +16,9 @@ class CustomUserUpdateForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email')
+        widgets = {
+            'username': forms.TextInput(attrs={'readonly': 'readonly'}),
+        }
+        help_texts = {
+            'username': 'Username изменить нельзя',
+        }

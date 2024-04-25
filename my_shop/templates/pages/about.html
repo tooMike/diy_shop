@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}
+  О проекте
+{% endblock %}
+
+{% block h1 %}
+  О проекте
+{% endblock h1 %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="/">Домашняя страница</a></li>
+    <li class="breadcrumb-item"><a href="{% url "pages:about" %}">О компании</a></li>
+{% endblock breadcrumb %}
+
+{% block content %}
+  <div class="col d-flex justify-content-center">
+    <div class="card" style="width: 40rem;">
+      <div class="card-body">
+        <p>
+          ShoppingOnline — интернет магазин, который продает лучшие инструменты в стране.
+        </p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

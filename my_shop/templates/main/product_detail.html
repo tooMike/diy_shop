@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load rating_tags %}
+
+{% block title %}
+  {{ product.name }}
+{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="/">Домашняя страница</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'main:category' product.category.slug %}">{{ product.category }}</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'main:manufacturer' product.manufacturer.slug %}">{{ product.manufacturer }}</a></li>
+    <li class="breadcrumb-item active"><a href="{% url 'main:product_detail' product.id %}">{{ product.name }}</a></li>
+{% endblock breadcrumb %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="row g-0">
+            <div class="col-md-4">
+                {% if product.image %}
+                <a href="{{ product.image.url }}" target="_blank">
+                    <img class="img-fluid rounded-start" src="{{ product.image.url }}" alt="{{ product.name }}" style="width: 100%; height: auto;">
+                </a>
+                {% endif %}
+            </div>
+            <div class="col-md-8">
+                <div class="card-body">
+                    <h1 class="card-title">{{ product.name }}</h1>
+                    <a href="{% url "main:category" product.category.slug %}"><h2 class="h5 text-muted">{{ product.category }}</h2></a>
+                    <p><strong>Производитель:</strong> {{ product.manufacturer }}</p>
+                    <p><strong>Страна:</strong> {{ product.manufacturer.country }}</p>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <strong>Цена:</strong> {{ product.price }}
+                        </li>
+                        {% if product.sale %}
+                            <li class="list-group-item">
+                                <strong>Скидка:</strong> {{ product.sale }}%
+                            </li>
+                        <li class="list-group-item">
+                            <strong>Цена со скидкой:</strong> {{ product.price_with_sale }}
+                        </li>
+                        {% endif %}
+                        
+                        <li class="list-group-item">
+                            <strong>Доступно в магазинах:</strong>
+                            <ul>
+                            {% for shop_data in shops_data %}
+                                <li>{{ shop_data.shop }} ({{ shop_data.shop.adress }})
+                                    <ul>
+                                        {% for item in shop_data.items %}
+                                            <li>Цвета: {{ item.colourset }}. В наличии: {{ item.quantity }} шт</li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Рейтинг:</strong> 
+                            {% if product.rating == 0 %}
+                                неизвестен
+                            {% else %}
+                                {{ product.rating }}
+                                <span class="d-flex align-items-center">
+                                    {% get_range product.rating as range %}
+                                    {% for _ in range %}
+                                        <div class="bi-star-fill"></div>
+                                    {% endfor %}
+                                </span>
+                            {% endif %}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <h3 class="h6">Описание:</h3>
+            <p>  {{ product.description }} </p>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

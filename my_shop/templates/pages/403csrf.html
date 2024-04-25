@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Ошибка CSRF токена{% endblock %}
+
+{% block h1 %}
+  Ошибка CSRF токена
+{% endblock h1 %}
+  
+{% block content %}
+<div class="col d-flex justify-content-center">
+  <div class="card" style="width: 40rem;">
+    <div class="card-body">
+      <a href="{% url 'main:index' %}">Вернуться на главную</a>
+    </div>
+  </div>
+</div>
+  
+{% endblock %}
+
