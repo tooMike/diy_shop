@@ -1,10 +1,9 @@
 from decimal import ROUND_UP, Decimal
 from django.contrib.auth import get_user_model
-from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.urls import reverse
 
-from main.choices import COLOUR
-
+from main.choices import RATING_CHOICES
 
 User = get_user_model()
 
@@ -49,17 +48,6 @@ class Colour(models.Model):
         return self.name
 
 
-class ColourSet(models.Model):
-    colours = models.ManyToManyField(Colour, verbose_name='цвет')
-
-    class Meta:
-        verbose_name = "цвет товара"
-        verbose_name_plural = "Цвета товара"
-        default_related_name = "colourset"
-    
-    def __str__(self):
-        return ', '.join([colour.name for colour in self.colours.all()])
-
 
 class Country(models.Model):
     name = models.CharField(max_length=50, verbose_name="Название страны")
@@ -98,9 +86,6 @@ class Product(models.Model):
     price = models.DecimalField(
         max_digits=10, decimal_places=2, verbose_name="Цена")
     sale = models.IntegerField(null=True, blank=True, verbose_name="Скидка")
-    rating = models.DecimalField(
-        max_digits=4, decimal_places=2, verbose_name="Рейтинг", default=0
-    )
     is_active = models.BooleanField(default=True, verbose_name='Опубликовано')
     image = models.ImageField(
         'Изображение',
@@ -119,11 +104,18 @@ class Product(models.Model):
         verbose_name='Магазин',
         blank=True
     )
-    colourset = models.ManyToManyField(
-        ColourSet,
+    colour = models.ManyToManyField(
+        Colour,
         verbose_name='Цвета товара',
-        through='ColourSetProduct',
+        through='ColourProduct',
     )
+
+    @property
+    def average_rating(self):
+        reviews = self.reviews.all()
+        if reviews:
+            return reviews.aggregate(models.Avg('rating'))['rating__avg']
+        return 0
 
     def price_with_sale(self):
         """Расчет новой цены товара с учетом скидки"""
@@ -132,7 +124,10 @@ class Product(models.Model):
             discounted_price = self.price * (Decimal(1) - discount_decimal)
             return discounted_price.quantize(Decimal('.01'), rounding=ROUND_UP)
         return self.price
-
+    
+    def get_absolute_url(self):
+        return reverse("main:product_detail", kwargs={"product_id": self.pk})
+    
     class Meta:
         verbose_name = "товар"
         verbose_name_plural = "Товары"
@@ -154,27 +149,19 @@ class SerialNumber(models.Model):
 class Review(models.Model):
     text = models.TextField(max_length=1000, verbose_name="Текст отзыва")
     photo = models.FileField("Фото", blank=True, upload_to='photo')
-    creted_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     rating = models.PositiveSmallIntegerField(
         verbose_name="Рейтинг",
-        validators=[
-            MaxValueValidator(
-                limit_value=5,
-                message="Оценка не может быть больше 10 баллов"
-            ),
-            MinValueValidator(
-                limit_value=1,
-                message="Оценка не может быть меньше 1го балла"
-            )
-        ]
+        choices=RATING_CHOICES
     )
     product = models.ForeignKey(Product, verbose_name="Товар", on_delete=models.CASCADE)
+    author = models.ForeignKey(User, verbose_name="Автор", on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "отзыв"
         verbose_name_plural = "Отзывы"
         default_related_name = "reviews"
-        ordering = ("-creted_at",)
+        ordering = ("-created_at",)
 
 
 class ShopProduct(models.Model):
@@ -182,8 +169,8 @@ class ShopProduct(models.Model):
     product = models.ForeignKey(Product, verbose_name="Товар", on_delete=models.CASCADE)
 
 
-class ColourSetProduct(models.Model):
-    colourset = models.ForeignKey(ColourSet, verbose_name="Цвета", on_delete=models.CASCADE)
+class ColourProduct(models.Model):
+    colour = models.ForeignKey(Colour, verbose_name="Цвета", on_delete=models.CASCADE)
     product = models.ForeignKey(Product, verbose_name="Товар", on_delete=models.CASCADE)
 
     class Meta:
@@ -191,10 +178,9 @@ class ColourSetProduct(models.Model):
         verbose_name_plural = "Цвета товара"
 
     def __str__(self):
-        return ', '.join([colour.name for colour in self.colourset.colours.all()])
+        return self.colour.name
 
-
-class ShopProductColourSetProduct(models.Model):
+class ShopProductColourProduct(models.Model):
     shopproduct = models.ForeignKey(ShopProduct, verbose_name="Товар в магазине", on_delete=models.CASCADE)
-    coloursetproduct = models.ForeignKey(ColourSetProduct, verbose_name="Цвета товара", on_delete=models.CASCADE)
+    colourproduct = models.ForeignKey(ColourProduct, verbose_name="Цвета товара", on_delete=models.CASCADE)
     quantity = models.IntegerField(verbose_name="Количество")

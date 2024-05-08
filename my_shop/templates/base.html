@@ -1,49 +1,48 @@
 {% load static %}
-{% load django_bootstrap5 %}
 {% with request.resolver_match.view_name as view_name %}
-
 
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta name="description" content="" />
-    <meta name="author" content="" />
-    <title>
-        {% block title %}{% endblock title %}
-    </title>
-    <!-- Favicon-->
-    <link rel="icon" type="image/x-icon" href="{% static "assets/favicon.ico" %}" />
-    <!-- Bootstrap icons-->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet" />
-    <!-- Core theme CSS (includes Bootstrap)-->
-    <link href="{% static "css/styles.css" %}" rel="stylesheet" />
-  </head>
-  <body>
-    {% include "includes/navigation.html" %}
-    <!-- Header-->
-    <header class="bg-dark py-5">
-      <div class="container px-4 px-lg-5 my-5">
-          <div class="text-center text-white">
-              <h1 class="display-4 fw-bolder">{% block h1 %}{% endblock h1 %}</h1>
-              {% if show_description %}
-                <p class="lead fw-normal text-white-50 mb-0">{% block description %}{% endblock description %}</p>
-              {% endif %}
-          </div>
-      </div>
-    </header>
-    <!-- Хлебные крошки -->
-    <nav aria-label="breadcrumb">
-      <ol class="breadcrumb">
-        {% block breadcrumb %}
-        {% endblock breadcrumb %}
-      </ol>
-    </nav>
+    {% load django_bootstrap5 %}
+    {% bootstrap_css %}
+    {% bootstrap_javascript %}
+    <!-- Добавляем подгрузку звездочек для рейтинга -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
-    <!-- Content -->
-    {% block content %} {% endblock content %}
+
+    <title>{% block title %}{% endblock title %}</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+    {% include "includes/navigation.html" %}
+
+    <!-- Header -->
+    <header class="bg-white py-2">
+        <div class="container text-center">
+            <h1 class="h4 fw-bolder text-dark">{% block h1 %}{% endblock h1 %}</h1>
+            {% if show_description %}
+                <p class="lead text-dark-50">{% block description %}{% endblock description %}</p>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Breadcrumbs -->
+    <div class="container mt-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                {% block breadcrumb %}{% endblock breadcrumb %}
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        {% block content %}{% endblock content %}
+    </div>
+
     {% include "includes/footer.html" %}
-  </body>
+</body>
 </html>
 {% endwith %}

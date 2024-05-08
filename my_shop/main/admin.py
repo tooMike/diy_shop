@@ -5,7 +5,7 @@ from main.models import *
 
 
 class ShopProductColourSetInline(nested_admin.NestedStackedInline):
-    model = ShopProductColourSetProduct
+    model = ShopProductColourProduct
     extra = 0
 
 
@@ -15,16 +15,16 @@ class ShopProductInline(nested_admin.NestedStackedInline):
     inlines = (ShopProductColourSetInline,)
 
 
-class ColourSetProductInline(nested_admin.NestedStackedInline):
-    model = ColourSetProduct
+class ColourProductInline(nested_admin.NestedStackedInline):
+    model = ColourProduct
     extra = 0
 
 
 class ProductAdmin(nested_admin.NestedModelAdmin):
-    list_display = ('name', 'price', 'sale', 'rating', 'category', 'manufacturer')
+    list_display = ('name', 'price', 'sale', 'average_rating', 'category', 'manufacturer')
     search_fields = ('name',)
     list_filter = ('category', 'manufacturer')
-    inlines = (ShopProductInline, ColourSetProductInline)
+    inlines = (ShopProductInline, ColourProductInline)
 
 
 class ManufacturerAdmin(nested_admin.NestedModelAdmin):
@@ -34,9 +34,8 @@ class ManufacturerAdmin(nested_admin.NestedModelAdmin):
 
 
 admin.site.register(Product, ProductAdmin)
-admin.site.register(ColourSet)
+admin.site.register(Colour)
 admin.site.register(Manufacturer, ManufacturerAdmin)
 admin.site.register(Country)
-admin.site.register(Colour)
 admin.site.register(Shop)
 admin.site.register(Category)

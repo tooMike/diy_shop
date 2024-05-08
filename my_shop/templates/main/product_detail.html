@@ -1,15 +1,20 @@
 {% extends "base.html" %}
 {% load rating_tags %}
+{% load django_bootstrap5 %}
 
 {% block title %}
   {{ product.name }}
 {% endblock %}
 
 {% block breadcrumb %}
-    <li class="breadcrumb-item"><a href="/">Домашняя страница</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'main:category' product.category.slug %}">{{ product.category }}</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'main:manufacturer' product.manufacturer.slug %}">{{ product.manufacturer }}</a></li>
-    <li class="breadcrumb-item active"><a href="{% url 'main:product_detail' product.id %}">{{ product.name }}</a></li>
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">Главная</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'main:category' product.category.slug %}">{{ product.category }}</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'main:manufacturer' product.manufacturer.slug %}">{{ product.manufacturer }}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+    </ol>
+  </nav>
 {% endblock breadcrumb %}
 
 {% block content %}
@@ -17,68 +22,115 @@
     <div class="card">
         <div class="row g-0">
             <div class="col-md-4">
-                {% if product.image %}
-                <a href="{{ product.image.url }}" target="_blank">
-                    <img class="img-fluid rounded-start" src="{{ product.image.url }}" alt="{{ product.name }}" style="width: 100%; height: auto;">
-                </a>
-                {% endif %}
-            </div>
+                <div class="position-relative">
+                    {% if product.sale %}
+                        <div class="badge bg-danger text-white position-absolute" style="top: 0.5rem; right: 0.5rem; z-index: 1000; border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 1rem; font-weight: bold;">Скидка {{ product.sale }}%</div>
+                    {% endif %}
+                    <a href="{% url "main:product_detail" product.id %}">
+                        <img class="card-img-top" src="{{ product.image.url }}" alt="{{ product.name }}">
+                    </a>
+                </div>
+            </div>            
             <div class="col-md-8">
                 <div class="card-body">
                     <h1 class="card-title">{{ product.name }}</h1>
-                    <a href="{% url "main:category" product.category.slug %}"><h2 class="h5 text-muted">{{ product.category }}</h2></a>
-                    <p><strong>Производитель:</strong> {{ product.manufacturer }}</p>
+                    <a href="{% url "main:category" product.category.slug %}" class="badge bg-secondary">{{ product.category }}</a>
+                    <p><strong>Производитель:</strong> <a href="{% url "main:manufacturer" product.manufacturer.slug %}">{{ product.manufacturer }}</a></p>
                     <p><strong>Страна:</strong> {{ product.manufacturer.country }}</p>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item">
-                            <strong>Цена:</strong> {{ product.price }}
-                        </li>
-                        {% if product.sale %}
-                            <li class="list-group-item">
-                                <strong>Скидка:</strong> {{ product.sale }}%
-                            </li>
-                        <li class="list-group-item">
-                            <strong>Цена со скидкой:</strong> {{ product.price_with_sale }}
-                        </li>
-                        {% endif %}
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item">
+                            <strong>Цена:</strong> 
+                            {% if product.sale %}
+                                <span class="text-decoration-line-through text-muted" style="font-size: 1.2rem;">{{ product.price }} руб.</span>
+                                <span class="text-danger fw-bold" style="font-size: 1.5rem;">{{ product.price_with_sale }} руб.</span>
+                            {% else %}
+                                <span class="fw-bold" style="font-size: 1.5rem;">{{ product.price }} руб.</span>
+                            {% endif %}
+                        </div>
                         
-                        <li class="list-group-item">
+                        <div class="list-group-item">
                             <strong>Доступно в магазинах:</strong>
                             <ul>
                             {% for shop_data in shops_data %}
                                 <li>{{ shop_data.shop }} ({{ shop_data.shop.adress }})
                                     <ul>
                                         {% for item in shop_data.items %}
-                                            <li>Цвета: {{ item.colourset }}. В наличии: {{ item.quantity }} шт</li>
+                                            <li>Цвет: {{ item.colour }}. В наличии: {{ item.quantity }} шт</li>
                                         {% endfor %}
                                     </ul>
                                 </li>
                             {% endfor %}
                             </ul>
-                        </li>
-                        <li class="list-group-item">
+                        </div>
+                        <div class="list-group-item">
                             <strong>Рейтинг:</strong> 
                             {% if product.rating == 0 %}
-                                неизвестен
+                                Неизвестен
                             {% else %}
-                                {{ product.rating }}
-                                <span class="d-flex align-items-center">
-                                    {% get_range product.rating as range %}
+                                {{ product.rating|floatformat:2 }}
+                                <span class="d-flex align-items-center small text-warning">
+                                    {% get_range product.average_rating as range %}
                                     {% for _ in range %}
-                                        <div class="bi-star-fill"></div>
+                                        <i class="bi-star-fill"></i>
                                     {% endfor %}
                                 </span>
                             {% endif %}
-                        </li>
-                    </ul>
+                        </div>
+                        <div class="list-group-item"><strong>Количество оценок:</strong> {{ product.reviews_count }}</div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="card-footer">
-            <h3 class="h6">Описание:</h3>
-            <p>  {{ product.description }} </p>
+    </div>
 
+    <!-- Форма и отзывы -->
+    {% if user.is_authenticated %}
+    <div class="card my-4">
+        <div class="card-body">
+            <h2 id="review_form"> 
+                {% if '/edit_review/' in request.path %}
+                    Отредактируйте отзыв:
+                {% else %}
+                    Оставьте свой отзыв:
+                {% endif %}
+            </h2>
+            <form method="post" class="col-md-8" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% bootstrap_form form %}
+                <button type="submit" class="btn btn-primary mt-2">
+                    {% if '/edit_review/' in request.path %}
+                    Изменить отзыв
+                    {% else %}
+                    Отправить отзыв
+                    {% endif %}
+                </button>
+            </form>
         </div>
     </div>
+    {% endif %}
+
+    <h2>Отзывы:</h2>
+    {% for review in reviews %}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5>{{ review.author }}</h5>
+            <h6 class="text-muted">{{ review.created_at }}</h6>
+            <div class="rating">
+               {% get_range review.rating as review_range %}
+               {% for star in review_range %}
+                   <i class="bi-star-fill text-warning"></i>
+               {% endfor %}
+            </div>
+            <p>{{ review.text }}</p>
+            {% if review.photo %}
+              <img src="{{ review.photo.url }}" class="img-thumbnail" alt="Фото отзыва">
+            {% endif %}
+            {% if request.user == review.author %}
+                <a href="{% url "main:edit_review" product.id review.id %}#review_form" class="btn btn-outline-primary btn-sm">Редактировать</a>
+                <a href="{% url "main:delete_review" review.id %}" class="btn btn-outline-danger btn-sm">Удалить</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
 </div>
 {% endblock %}

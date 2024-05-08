@@ -1,51 +1,67 @@
-
 {% load static %}
 {% load rating_tags %}
 
 <div class="col mb-5">
     <div class="card h-100">
-        {% if product.sale %}
         <!-- Sale badge-->
-            <div class="badge bg-dark text-white position-absolute" style="top: 0.5rem; right: 0.5rem">Скидка {{ product.sale }}% </div>
+        {% if product.sale %}
+            <div class="badge bg-dark text-white position-absolute" style="top: 0.5rem; right: 0.5rem">Скидка {{ product.sale }}%</div>
         {% endif %}
         <!-- Product image-->
-        {% if product.image %}
-            <a href="{% url "main:product_detail" product.id %}"><img class="card-img-top" src="{{ product.image.url }}" alt="..." /> </a>
-        {% else %}
-            <a href="{% url "main:product_detail" product.id %}"><img class="card-img-top" src="https://dummyimage.com/450x300/dee2e6/6c757d.jpg" alt="..." /></a>
-        {% endif %}
+        <a href="{% url "main:product_detail" product.id %}">
+            <img class="card-img-top" src="{{ product.image.url|default:'https://dummyimage.com/450x300/dee2e6/6c757d.jpg' }}" alt="{{ product.name }}">
+        </a>
         <!-- Product details-->
         <div class="card-body p-4">
             <div class="text-center">
                 <!-- Product name-->
-                <a href="{% url "main:product_detail" product.id %}"><h5 class="fw-bolder">{{ product.name }}</h5></a>
-                Категория: <a href="{% url "main:category" product.category.slug %}">{{ product.category }}</a> <br>
-                Производитель: <a href="{% url "main:manufacturer" product.manufacturer.slug %}">{{ product.manufacturer }}</a> <br>
-                <br>
-                Доступно в {{ product.num_shop }} магазинах <br>
-                Всего товаров в наличии: {{ product.num_products }} <br>
-                Всего цветов: {{ product.num_coloursets }} <br>
-                {% if product.rating > 0 %}
+                <h5 class="fw-bolder">
+                    <a href="{% url "main:product_detail" product.id %}" class="text-dark">{{ product.name }}</a>
+                </h5>
+                <div class="mb-2">
+                    <span class="text-muted">Категория: </span>
+                    <a href="{% url "main:category" product.category.slug %}" class="text-decoration-none">{{ product.category }}</a>
+                </div>
+                <div class="mb-2">
+                    <span class="text-muted">Производитель: </span>
+                    <a href="{% url "main:manufacturer" product.manufacturer.slug %}" class="text-decoration-none">{{ product.manufacturer }}</a>
+                </div>
+                <div class="mb-2">
+                    Доступно в <strong>{{ product.num_shop }}</strong> магазинах
+                </div>
+                <div class="mb-2">
+                    Всего товаров в наличии: <strong>{{ product.num_products }}</strong>
+                </div>
+                {% if product.num_coloursets %}
+                    <div class="mb-2">
+                        Всего цветов: <strong>{{ product.num_coloursets }}</strong>
+                    </div>
+                {% endif %}
                 <!-- Product reviews-->
+                {% if product.rating > 0 %}
                     <div class="d-flex justify-content-center small text-warning mb-2">
                         {% get_range product.rating as range %}
                         {% for _ in range %}
-                            <div class="bi-star-fill"></div>
+                            <i class="bi bi-star-fill"></i>
                         {% endfor %}
                     </div>
                 {% endif %}
                 <!-- Product price-->
-                {% if product.sale %}
-                    <span class="text-muted text-decoration-line-through"> {{ product.price }} руб.</span>
-                    {{ product.price_with_sale }} руб.
-                {% else %}
-                    {{ product.price }} руб.
-                {% endif %}         
+                <div class="fw-bold fs-5">
+                    {% if product.sale %}
+                        <span class="text-muted text-decoration-line-through">{{ product.price }} руб.</span>
+                        {{ product.price_with_sale }} руб.
+                    {% else %}
+                        {{ product.price }} руб.
+                    {% endif %}
+                </div>
             </div>
         </div>
         <!-- Product actions-->
         <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
-            <div class="text-center"><a class="btn btn-outline-dark mt-auto" href="#">Добавить в корзину</a></div>
+            <div class="text-center">
+                <a class="btn btn-outline-dark mt-auto" href="">Добавить в корзину</a>
+            </div>
         </div>
     </div>
 </div>

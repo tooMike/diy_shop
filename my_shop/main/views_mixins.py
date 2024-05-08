@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView
 
@@ -27,10 +28,12 @@ class ObjectListViewMixin(ListView):
     def get_queryset(self):
         """Получаем все товары в нужной категории"""
         category = self.get_category()
-        return category.product.filter(is_active=True).order_by('-rating')
+        return category.product.filter(is_active=True).annotate(rating=Avg('reviews__rating')).order_by('-rating')
 
     def get_context_data(self, **kwargs):
         """Добавляем саму категорию в словарь контекста"""
         context = super().get_context_data(**kwargs)
-        context['category'] = self.get_category
+        category = self.get_category()
+        context['category'] = category
+        context['h1'] = category.name
         return context
