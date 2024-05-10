@@ -1,28 +1,148 @@
 {% extends "main/index.html" %}
+{% load django_bootstrap5 %}
 
+<!-- Хлебные крошки -->
 {% block breadcrumb %}
     <li class="breadcrumb-item {% if view_name  == 'main:index' %}active{% endif %}"><a href="/">Домашняя страница</a></li>
     {% if view_name == 'main:category' %}
         <li class="breadcrumb-item"><a href="/">Категории</a></li>
-        <li class="breadcrumb-item active"><a href="{% url 'main:category' category.slug %}">{{ category }}</a></li>
+        <li class="breadcrumb-item active"><a href="{% url 'main:category' related_object.slug %}">{{ related_object }}</a></li>
     {% endif %}
     {% if view_name == 'main:manufacturer' %}
         <li class="breadcrumb-item"><a href="/">Производители</a></li>
-        <li class="breadcrumb-item active"><a href="{% url 'main:manufacturer' category.slug %}">{{ category }}</a></li>
+        <li class="breadcrumb-item active"><a href="{% url 'main:manufacturer' related_object.slug %}">{{ related_object }}</a></li>
     {% endif %}
 {% endblock breadcrumb %}
 
 {% block content %}
-<!-- Section-->
-<section class="py-5">
-    <div class="container px-4 px-lg-5 mt-5">
-        <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
-            {% for product in product_list %}
-                {% include "includes/product_card.html" %}
-            {% endfor %}
+
+<section class="py-2">
+    <div class="container px-4 px-lg-5 mt-1">
+        <div class="row">
+
+            <!-- Блок с сортировкой -->
+            <div class="col-12">
+                <div class="d-flex justify-content-end mb-3">
+                    <label for="sort" class="me-2 align-self-center">Сортировать по:</label>
+                    <form id="sorting-form" method="get">
+                        <button type="button" class="btn btn-outline-secondary mx-1 sort-button" data-sort="price">Цена ↑</button>
+                        <button type="button" class="btn btn-outline-secondary mx-1 sort-button" data-sort="-price">Цена ↓</button>
+                        <button type="button" class="btn btn-outline-secondary mx-1 sort-button" data-sort="rating">Рейтинг ↑</button>
+                        <button type="button" class="btn btn-outline-secondary mx-1 sort-button" data-sort="-rating">Рейтинг ↓</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Блок с фильтрами -->
+            <div class="col-md-3">
+                <h3>Поиск</h3>
+                <form id="filters-form">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Фильтры по цене</h5>
+                            <label for="priceMin" class="form-label">Минимальная цена</label>
+                            <input type="number" class="form-control" id="priceMin" name="min_price" placeholder="От" value="{{ request.GET.min_price }}">
+                            <label for="priceMax" class="form-label">Максимальная цена</label>
+                            <input type="number" class="form-control" id="priceMax" name="max_price" placeholder="До" value="{{ request.GET.max_price }}">
+                        </div>
+                    </div>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Фильтр по названию товара</h5>
+                            <label for="product_name" class="form-label">Поиск по названию товара</label>
+                            <input type="text" class="form-control" id="product_name" name="product_name" placeholder="Название товара" value="{{ request.GET.product_name }}">
+                        </div>
+                    </div>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Фильтр по магазинам</h5>
+                            <div class="mt-3">
+                                <label class="form-label">Выберите магазины</label>
+                                {% for shop in shops %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="shop_id" value="{{ shop.id }}" id="shop_{{ shop.id }}" {% if shop.id|stringformat:"s" in selected_shop_ids %}checked{% endif %}>
+                                    <label class="form-check-label" for="shop_{{ shop.id }}">
+                                        {{ shop.name }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% bootstrap_button button_type="submit" content="Применить" %}
+                </form>
+            </div>
+            
+            <!-- Карточки товаров -->
+            <div class="col-md-9">
+                <div class="row gx-4 gx-lg-5 row-cols-1 row-cols-md-2 row-cols-xl-3 justify-content-center">
+                    {% for product in product_list %}
+                        {% include "includes/product_card.html" %}
+                    {% endfor %}
+                </div>
+                {% include "includes/paginator.html" %}
+            </div>
         </div>
     </div>
 </section>
-{% include "includes/paginator.html" %}
-{% endblock content %}
 
+<!-- Скрипт нужен для корректной работы фильтров -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById('filters-form');
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();  // Предотвратить стандартную отправку формы
+    
+            const urlParams = new URLSearchParams(window.location.search);
+            const inputs = form.querySelectorAll('input[type="number"], input[type="text"], input[type="checkbox"]');
+    
+            // Очищаем все параметры магазинов перед добавлением новых
+            urlParams.delete('shop_id');
+    
+            inputs.forEach(input => {
+                if (input.type === 'checkbox') {
+                    if (input.checked) {
+                        urlParams.append(input.name, input.value);  // Добавляем выбранные значения
+                    }
+                    // Ничего не делаем если чекбокс не отмечен, так как мы уже удалили все значения
+                } else if (input.value !== '') {
+                    urlParams.set(input.name, input.value);  // Устанавливаем или обновляем значения для других полей
+                } else {
+                    urlParams.delete(input.name);  // Удаляем параметр если поле пустое
+                }
+            });
+    
+            // Обновить URL
+            window.location.search = urlParams.toString();
+        });
+    });
+</script>
+    
+    
+<!-- Скрипт нужен для корректной работы кнопок сортировки -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const buttons = document.querySelectorAll('.sort-button');
+        const urlParams = new URLSearchParams(window.location.search);
+    
+        // Установка активного состояния кнопок
+        buttons.forEach(button => {
+            if (urlParams.get('product_sort') === button.dataset.sort) {
+                button.classList.add('active');
+                button.classList.remove('btn-outline-secondary');
+                button.classList.add('btn-secondary');
+            }
+        });
+    
+        // Добавление события клика и отправка формы
+        buttons.forEach(button => {
+            button.addEventListener('click', function() {
+                urlParams.set('product_sort', this.dataset.sort);
+                window.location.search = urlParams.toString();
+            });
+        });
+    });
+</script>
+
+{% endblock content %}

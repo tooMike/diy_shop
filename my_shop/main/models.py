@@ -1,5 +1,6 @@
 from decimal import ROUND_UP, Decimal
 from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
 
@@ -86,6 +87,12 @@ class Product(models.Model):
     price = models.DecimalField(
         max_digits=10, decimal_places=2, verbose_name="Цена")
     sale = models.IntegerField(null=True, blank=True, verbose_name="Скидка")
+    actual_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Цена со скидкой",
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
     is_active = models.BooleanField(default=True, verbose_name='Опубликовано')
     image = models.ImageField(
         'Изображение',
@@ -116,14 +123,15 @@ class Product(models.Model):
         if reviews:
             return reviews.aggregate(models.Avg('rating'))['rating__avg']
         return 0
-
-    def price_with_sale(self):
-        """Расчет новой цены товара с учетом скидки"""
-        if self.sale:
-            discount_decimal = Decimal(self.sale) / Decimal(100)
-            discounted_price = self.price * (Decimal(1) - discount_decimal)
-            return discounted_price.quantize(Decimal('.01'), rounding=ROUND_UP)
-        return self.price
+    
+    # @property
+    # def price_with_sale(self):
+    #     """Расчет новой цены товара с учетом скидки"""
+    #     if self.sale:
+    #         discount_decimal = Decimal(self.sale) / Decimal(100)
+    #         discounted_price = self.price * (Decimal(1) - discount_decimal)
+    #         return discounted_price.quantize(Decimal('.01'), rounding=ROUND_UP)
+    #     return self.price
     
     def get_absolute_url(self):
         return reverse("main:product_detail", kwargs={"product_id": self.pk})
@@ -135,6 +143,19 @@ class Product(models.Model):
 
     def __str__(self) -> str:
         return self.name
+    
+    def save(self, *args, **kwargs):
+        if self.sale:
+            discount_decimal = Decimal(self.sale) / Decimal(100)
+            self.actual_price = self.price * (Decimal(1) - discount_decimal)
+            self.actual_price = self.actual_price.quantize(
+                Decimal('.01'),
+                rounding=ROUND_UP
+            )
+        else:
+            self.actual_price = self.price
+        super().save(*args, **kwargs)
+
     
 
 class SerialNumber(models.Model):

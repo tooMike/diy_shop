@@ -30,7 +30,7 @@
                     Доступно в <strong>{{ product.num_shop }}</strong> магазинах
                 </div>
                 <div class="mb-2">
-                    Всего товаров в наличии: <strong>{{ product.num_products }}</strong>
+                    В наличии: <strong>{{ product.num_products }}</strong> шт.
                 </div>
                 {% if product.num_coloursets %}
                     <div class="mb-2">
@@ -50,7 +50,7 @@
                 <div class="fw-bold fs-5">
                     {% if product.sale %}
                         <span class="text-muted text-decoration-line-through">{{ product.price }} руб.</span>
-                        {{ product.price_with_sale }} руб.
+                        {{ product.actual_price }} руб.
                     {% else %}
                         {{ product.price }} руб.
                     {% endif %}

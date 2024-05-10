@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'djoser',
     'nested_admin',
+    'django_filters',
     'users',
     'main',
     'api',
@@ -174,4 +175,4 @@ EMAIL_SERVER = EMAIL_HOST_USER
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 EMAIL_ADMIN = EMAIL_HOST_USER
 
-PAGINATE_BY = 2
+PAGINATE_BY = 3

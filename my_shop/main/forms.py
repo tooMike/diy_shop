@@ -14,4 +14,7 @@ class ReviewForm(forms.ModelForm):
         model = Review
         fields = ('text', 'rating', 'photo')
 
-    
+
+class PriceFilterForm(forms.Form):
+    price_min = forms.IntegerField(label='Минимальная цена', required=False, widget=forms.NumberInput(attrs={'min': 0}))
+    price_max = forms.IntegerField(label='Максимальная цена', required=False)

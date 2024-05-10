@@ -1,36 +1,25 @@
 from django.conf import settings
-from django.db.models import Avg, Count, Sum
+from django.db.models import Avg, Count
 from django.db.models.base import Model as Model
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.generic import ListView
 
 from main.forms import ReviewForm
 from main.models import Category, Manufacturer, Product, Review
-from main.views_mixins import ObjectListViewMixin
+from main.views_mixins import BaseObjectListViewMixin, ObjectListViewMixin
+
 
 paginate_by = getattr(settings, 'PAGINATE_BY', 10)
 
 
-class ProductListView(ListView):
+
+class ProductListView(BaseObjectListViewMixin):
     """Отображение списка товаров"""
-    model = Product
-    queryset = Product.objects.select_related(
-            'category',
-            'manufacturer',
-        ).annotate(
-            num_shop=Count('shop', distinct=True),
-            num_colours=Count('colour', distinct=True),
-            num_products=Sum('shopproduct__shopproductcolourproduct__quantity', distinct=True),
-            rating=Avg('reviews__rating'),
-        ).order_by(
-            '-rating'
-        )
-    paginate_by = paginate_by
 
 
 def product_detail_view(request, product_id, review_id=None):
     """Отображение страницы товара"""
-    queryset = Product.objects.annotate(rating=Avg('reviews__rating'), reviews_count=Count('reviews'),)
+    queryset = Product.objects.annotate(rating=Avg(
+        'reviews__rating'), reviews_count=Count('reviews'),)
     product = get_object_or_404(queryset, id=product_id, is_active=True)
 
     # Добавляем в контекст данные о товаре
@@ -55,7 +44,8 @@ def product_detail_view(request, product_id, review_id=None):
         review_instance = None
 
     # Создаем объект формы со всеми данными
-    form = ReviewForm(request.POST or None, files=request.FILES or None, instance=review_instance)
+    form = ReviewForm(request.POST or None,
+                      files=request.FILES or None, instance=review_instance)
     if form.is_valid():
         review = form.save(commit=False)
         review.author = request.user
@@ -92,10 +82,10 @@ def delete_review(request, review_id):
 
 
 class CategoryListView(ObjectListViewMixin):
-    model = Category
+    related_model = Category
     slug_url_kwarg = 'category_slug'
 
 
 class ManufacturerListView(ObjectListViewMixin):
-    model = Manufacturer
+    related_model = Manufacturer
     slug_url_kwarg = 'manufacturer_slug'

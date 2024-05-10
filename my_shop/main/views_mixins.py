@@ -1,39 +1,84 @@
 from django.conf import settings
-from django.db.models import Avg
+from django.db.models import Avg, Count, Sum
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView
+from django_filters.views import FilterView
 
-from main.models import Category
+from main.models import Category, Product, Manufacturer, Shop
+from main.filters import ProductFilter
+
 
 paginate_by = getattr(settings, 'PAGINATE_BY', 10)
 
 
-class ObjectListViewMixin(ListView):
-    """Отображения списка товаров с заданным параметром."""
-
-    slug_url_kwarg = 'category_slug'
+class BaseObjectListViewMixin(FilterView):
     template_name = 'main/product_list.html'
-    model = Category
+    model = Product
     paginate_by = paginate_by
+    filterset_class = ProductFilter
 
-    def get_category(self):
-        """Получаем нужную категорию."""
-        category = get_object_or_404(
-            self.model,
+    def get_queryset(self):
+        """Получаем все товары"""
+        queryset = Product.objects.filter(is_active=True).select_related(
+            'manufacturer',
+            'category',
+        ).annotate(
+            num_shop=Count('shop', distinct=True),
+            num_products=Sum(
+                'shopproduct__shopproductcolourproduct__quantity', distinct=True),
+            rating=Avg('reviews__rating'),
+        ).order_by(
+            '-rating'
+        )
+
+        # Обработка сортировки (по цене и по рейтингу)
+        if self.request.GET.get('product_sort'):
+            queryset = queryset.order_by(self.request.GET.get('product_sort'))
+
+        return queryset
+
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['shops'] = Shop.objects.all()
+        # Передаем в контекст все shop_id из url (для фильтра по магазинам)
+        context['selected_shop_ids'] = self.request.GET.getlist('shop_id')
+        return context
+
+
+class ObjectListViewMixin(BaseObjectListViewMixin):
+    """
+    Отображение списка товаров связанных с указанной моделью.
+    Переопределять в наследуемых классах нужно: slug_url_kwarg и related_model.
+    """
+
+    slug_url_kwarg = None
+    related_model = None
+
+    def get_related_object(self):
+        """Получаем нужный связанный объект."""
+        related_object = get_object_or_404(
+            self.related_model,
             slug=self.kwargs[self.slug_url_kwarg],
             is_active=True
         )
-        return category
+        return related_object
 
     def get_queryset(self):
-        """Получаем все товары в нужной категории"""
-        category = self.get_category()
-        return category.product.filter(is_active=True).annotate(rating=Avg('reviews__rating')).order_by('-rating')
+        """Получаем все товары связанные с указанной моделью"""
+        queryset = super().get_queryset()
+        if self.related_model is not None:
+            related_object = self.get_related_object()
+            if self.related_model == Category:
+                queryset = queryset.filter(category=related_object.id)
+            if self.related_model == Manufacturer:
+                queryset = queryset.filter(manufacturer=related_object.id)
+        return queryset
 
     def get_context_data(self, **kwargs):
-        """Добавляем саму категорию в словарь контекста"""
+        """Добавляем сам связанный объект в словарь контекста"""
         context = super().get_context_data(**kwargs)
-        category = self.get_category()
-        context['category'] = category
-        context['h1'] = category.name
+        related_object = self.get_related_object()
+        context['related_object'] = related_object
+        context['h1'] = related_object.name
         return context
