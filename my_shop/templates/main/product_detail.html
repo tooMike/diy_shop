@@ -27,7 +27,9 @@
                         <div class="badge bg-danger text-white position-absolute" style="top: 0.5rem; right: 0.5rem; z-index: 1000; border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 1rem; font-weight: bold;">Скидка {{ product.sale }}%</div>
                     {% endif %}
                     <a href="{% url "main:product_detail" product.id %}">
-                        <img class="card-img-top" src="{{ product.image.url }}" alt="{{ product.name }}">
+                        <img class="card-img-top" 
+                            src="{% if product.image %}{{ product.image.url }}{% else %}https://dummyimage.com/450x300/dee2e6/6c757d.jpg{% endif %}"
+                            alt="{{ product.name }}">
                     </a>
                 </div>
             </div>            

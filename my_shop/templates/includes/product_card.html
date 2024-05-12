@@ -9,7 +9,9 @@
         {% endif %}
         <!-- Product image-->
         <a href="{% url "main:product_detail" product.id %}">
-            <img class="card-img-top" src="{{ product.image.url|default:'https://dummyimage.com/450x300/dee2e6/6c757d.jpg' }}" alt="{{ product.name }}">
+            <img class="card-img-top" 
+                src="{% if product.image %}{{ product.image.url }}{% else %}https://dummyimage.com/450x300/dee2e6/6c757d.jpg{% endif %}"
+                alt="{{ product.name }}">
         </a>
         <!-- Product details-->
         <div class="card-body p-4">

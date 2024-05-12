@@ -94,6 +94,7 @@ class Product(models.Model):
         validators=[MinValueValidator(Decimal('0.01'))]
     )
     is_active = models.BooleanField(default=True, verbose_name='Опубликовано')
+    created = models.DateTimeField(auto_now_add=True, verbose_name='Время добавления')
     image = models.ImageField(
         'Изображение',
         upload_to='product_images',
@@ -124,15 +125,6 @@ class Product(models.Model):
             return reviews.aggregate(models.Avg('rating'))['rating__avg']
         return 0
     
-    # @property
-    # def price_with_sale(self):
-    #     """Расчет новой цены товара с учетом скидки"""
-    #     if self.sale:
-    #         discount_decimal = Decimal(self.sale) / Decimal(100)
-    #         discounted_price = self.price * (Decimal(1) - discount_decimal)
-    #         return discounted_price.quantize(Decimal('.01'), rounding=ROUND_UP)
-    #     return self.price
-    
     def get_absolute_url(self):
         return reverse("main:product_detail", kwargs={"product_id": self.pk})
     
@@ -140,6 +132,7 @@ class Product(models.Model):
         verbose_name = "товар"
         verbose_name_plural = "Товары"
         default_related_name = "product"
+        ordering = ('created',)
 
     def __str__(self) -> str:
         return self.name
@@ -169,7 +162,7 @@ class SerialNumber(models.Model):
 
 class Review(models.Model):
     text = models.TextField(max_length=1000, verbose_name="Текст отзыва")
-    photo = models.FileField("Фото", blank=True, upload_to='photo')
+    photo = models.FileField("Фото", blank=True, upload_to='photo', null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     rating = models.PositiveSmallIntegerField(
         verbose_name="Рейтинг",
@@ -189,6 +182,9 @@ class ShopProduct(models.Model):
     shop = models.ForeignKey(Shop, verbose_name="Магазин", on_delete=models.CASCADE)
     product = models.ForeignKey(Product, verbose_name="Товар", on_delete=models.CASCADE)
 
+    class Meta:
+        default_related_name = "shopproduct"
+
 
 class ColourProduct(models.Model):
     colour = models.ForeignKey(Colour, verbose_name="Цвета", on_delete=models.CASCADE)
@@ -197,6 +193,7 @@ class ColourProduct(models.Model):
     class Meta:
         verbose_name = "цвет товара"
         verbose_name_plural = "Цвета товара"
+        default_related_name = "colourproduct"
 
     def __str__(self):
         return self.colour.name
@@ -205,3 +202,6 @@ class ShopProductColourProduct(models.Model):
     shopproduct = models.ForeignKey(ShopProduct, verbose_name="Товар в магазине", on_delete=models.CASCADE)
     colourproduct = models.ForeignKey(ColourProduct, verbose_name="Цвета товара", on_delete=models.CASCADE)
     quantity = models.IntegerField(verbose_name="Количество")
+
+    class Meta:
+        default_related_name = "shopproductcolourproduct"

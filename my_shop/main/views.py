@@ -18,8 +18,10 @@ class ProductListView(BaseObjectListViewMixin):
 
 def product_detail_view(request, product_id, review_id=None):
     """Отображение страницы товара"""
-    queryset = Product.objects.annotate(rating=Avg(
-        'reviews__rating'), reviews_count=Count('reviews'),)
+    queryset = Product.objects.annotate(
+        rating=Avg('reviews__rating'),
+        reviews_count=Count('reviews'),
+    )
     product = get_object_or_404(queryset, id=product_id, is_active=True)
 
     # Добавляем в контекст данные о товаре
@@ -28,11 +30,11 @@ def product_detail_view(request, product_id, review_id=None):
         'items': [{
             'colour': item.colourproduct,
             'quantity': item.quantity
-        } for item in shopproduct.shopproductcolourproduct_set.select_related(
+        } for item in shopproduct.shopproductcolourproduct.select_related(
             'colourproduct',
             'colourproduct__colour'
         )]
-    } for shopproduct in product.shopproduct_set.select_related('shop')]
+    } for shopproduct in product.shopproduct.select_related('shop')]
 
     # Получаем все комментарии и их авторов
     reviews = product.reviews.select_related('author')

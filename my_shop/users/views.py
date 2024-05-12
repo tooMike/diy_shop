@@ -18,6 +18,7 @@ User = get_user_model()
 
 
 def email_verification(request):
+    """Представление для отправки кода подтверждения на емейл пользователя."""
     initial_data = {}
     if request.session.get("user_email"):
         initial_data["email"] = request.session["user_email"]
@@ -51,6 +52,7 @@ def email_verification(request):
 
 
 def code_verification(request):
+    """Представление для проверки кода подтверждения."""
     # Получаем email пользователя из сессии
     initial_data = {
         "email": request.session.get(
@@ -77,7 +79,7 @@ class UserRegistration(UserNotAuthenticatedMixin, CreateView):
     success_url = reverse_lazy("login")
 
     # Получаем email из сессии и устанавливаем его
-    # как начального значения для поля email формы
+    # как начальное значения для поля email формы
     def get_initial(self):
         initial = super(UserRegistration, self).get_initial()
         user_email = self.request.session.get("user_email", None)
