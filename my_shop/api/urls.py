@@ -6,6 +6,8 @@ from api import views as api_view
 
 router_v1 = SimpleRouter()
 router_v1.register("products", api_view.ProductViewSet, basename="products")
+router_v1.register("categories", api_view.CategoriesViewSet, basename="categories")
+router_v1.register("manufacturer", api_view.ManufacrurerViewSet, basename="manufacturer")
 router_v1.register(
     r"products/(?P<product_id>\d+)/reviews",
     api_view.ReviewViewSet,
@@ -13,16 +15,6 @@ router_v1.register(
 )
 
 urlpatterns = [
-    path(
-        "categories/",
-        api_view.CategoriesViewSet.as_view({"get": "list"}),
-        name="api_category",
-    ),
-    path(
-        "manufacturer/",
-        api_view.ManufacrurerViewSet.as_view({"get": "list"}),
-        name="api_manufacturer",
-    ),
     path(
         "auth/email_verification/",
         api_view.email_send_confirmation_code,

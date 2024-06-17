@@ -1,7 +1,7 @@
 from main.models import Category, Manufacturer
 
 def categories(request):
-    return {'categories': Category.objects.all()}
+    return {'categories': Category.objects.filter(is_active=True)}
 
 def manufacturers(request):
-    return {'manufacturers': Manufacturer.objects.all()}
+    return {'manufacturers': Manufacturer.objects.filter(is_active=True)}

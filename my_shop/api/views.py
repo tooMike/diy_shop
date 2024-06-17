@@ -123,18 +123,31 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, product=self.get_product())
 
 
-
-class CategoriesViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    """Представление для получения категорий."""
+class CategoriesViewSet(viewsets.ModelViewSet):
+    """Представление для категорий."""
 
     queryset = Category.objects.filter(is_active=True)
     pagination_class = CategoryManufacturerPagination
     serializer_class = CategorySerializer
+    permission_classes = (IsAdminStaffAuthorReadOnly,)
+
+    def get_queryset(self):
+        """Отдаем все категории только сотрудникам."""
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            return Category.objects.all()
+        return super().get_queryset()
 
 
-class ManufacrurerViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+class ManufacrurerViewSet(viewsets.ModelViewSet):
     """Представление для получения производителей."""
 
     queryset = Manufacturer.objects.filter(is_active=True)
     pagination_class = CategoryManufacturerPagination
     serializer_class = ManufacturerSerializer
+    permission_classes = (IsAdminStaffAuthorReadOnly,)
+
+    def get_queryset(self):
+        """Отдаем всех производителей только сотрудникам."""
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            return Manufacturer.objects.all()
+        return super().get_queryset()

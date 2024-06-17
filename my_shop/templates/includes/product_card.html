@@ -49,18 +49,20 @@
                     </div>
                 {% endif %}
                 <!-- Product price-->
-                <div class="fw-bold fs-5">
-                    {% if product.sale %}
-                        <span class="text-muted text-decoration-line-through">{{ product.price }} руб.</span>
-                        {{ product.actual_price }} руб.
-                    {% else %}
-                        {{ product.price }} руб.
-                    {% endif %}
-                </div>
+
             </div>
         </div>
         <!-- Product actions-->
         <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+            <div class="fw-bold fs-5 text-center">
+                {% if product.sale %}
+                    <span class="text-muted text-decoration-line-through">{{ product.price }} руб.</span>
+                    <br>
+                    {{ product.actual_price }} руб.
+                {% else %}
+                    {{ product.price }} руб.
+                {% endif %}
+            </div>
             <div class="text-center">
                 <a class="btn btn-outline-dark mt-auto" href="">Добавить в корзину</a>
             </div>

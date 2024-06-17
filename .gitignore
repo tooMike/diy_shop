@@ -147,3 +147,5 @@ dmypy.json
 
 # папки со статикой и медиа
 media/
+product_images/
+migrations/

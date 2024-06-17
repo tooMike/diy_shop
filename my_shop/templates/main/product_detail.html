@@ -54,7 +54,7 @@
                             <strong>Доступно в магазинах:</strong>
                             <ul>
                             {% for shop_data in shops_data %}
-                                <li>{{ shop_data.shop }} ({{ shop_data.shop.adress }})
+                                <li>{{ shop_data.shop }} ({{ shop_data.shop.address }})
                                     <ul>
                                         {% for item in shop_data.items %}
                                             <li>Цвет: {{ item.colour }}. В наличии: {{ item.quantity }} шт</li>

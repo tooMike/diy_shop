@@ -12,6 +12,7 @@ paginate_by = getattr(settings, 'PAGINATE_BY', 10)
 
 
 class BaseObjectListViewMixin(FilterView):
+
     template_name = 'main/product_list.html'
     model = Product
     paginate_by = paginate_by
@@ -32,8 +33,9 @@ class BaseObjectListViewMixin(FilterView):
         )
 
         # Обработка сортировки (по цене и по рейтингу)
-        if self.request.GET.get('product_sort'):
-            queryset = queryset.order_by(self.request.GET.get('product_sort'))
+        product_sort = self.request.GET.get('product_sort')
+        if product_sort:
+            queryset = queryset.order_by(product_sort)
 
         # # Полнотекстовый поиск
         # product_name = self.request.GET.get('product_name')
@@ -42,7 +44,6 @@ class BaseObjectListViewMixin(FilterView):
 
         return queryset
 
-    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['shops'] = Shop.objects.all()

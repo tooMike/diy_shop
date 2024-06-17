@@ -11,7 +11,7 @@ User = get_user_model()
 
 class Shop(models.Model):
     name = models.CharField(max_length=150, verbose_name="Название магазина")
-    adress = models.TextField(max_length=300, verbose_name="Адрес магазина")
+    address = models.TextField(max_length=300, verbose_name="Адрес магазина")
 
     class Meta:
         verbose_name = "магазин"
@@ -118,6 +118,15 @@ class Product(models.Model):
         through='ColourProduct',
     )
 
+    class Meta:
+        verbose_name = "товар"
+        verbose_name_plural = "Товары"
+        default_related_name = "product"
+        ordering = ('created',)
+
+    def __str__(self) -> str:
+        return self.name
+
     @property
     def average_rating(self):
         reviews = self.reviews.all()
@@ -127,15 +136,6 @@ class Product(models.Model):
     
     def get_absolute_url(self):
         return reverse("main:product_detail", kwargs={"product_id": self.pk})
-    
-    class Meta:
-        verbose_name = "товар"
-        verbose_name_plural = "Товары"
-        default_related_name = "product"
-        ordering = ('created',)
-
-    def __str__(self) -> str:
-        return self.name
     
     def save(self, *args, **kwargs):
         if self.sale:

@@ -1,0 +1,11 @@
+name,country_id,slug,is_active
+Bosch,3,bosch,True
+Makita,5,makita,True
+DeWalt,2,dewalt,True
+Hilti,6,hilti,True
+Black & Decker,2,black-decker,True
+Stihl,3,stihl,True
+Metabo,3,metabo,True
+Hitachi,5,hitachi,True
+Festool,3,festool,True
+Ryobi,5,ryobi,True

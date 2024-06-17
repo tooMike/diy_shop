@@ -94,6 +94,18 @@ DATABASES = {
 }
 
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('POSTGRES_DB', 'django'),
+#         'USER': os.getenv('POSTGRES_USER', 'django'),
+#         'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+#         'HOST': os.getenv('DB_HOST', ''),
+#         'PORT': os.getenv('DB_PORT', 5432)
+#     }
+# }
+
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -135,22 +147,23 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STATIC_URL = '/static/'
+STATIC_URL = '/backend_static/'
+STATIC_ROOT = '/backend_static'
 
 # Дополнительные директории, где собраны статические файлы проекта.
-STATICFILES_DIRS = [
-    BASE_DIR / 'static_dev',
-]
+# STATICFILES_DIRS = [
+#     BASE_DIR / 'static_dev',
+# ]
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Изменяем стандартную модель пользователя
 AUTH_USER_MODEL = 'users.MyUser'
 
-
 LOGIN_REDIRECT_URL = 'main:index'
 
 LOGIN_URL = 'login'
-
-MEDIA_ROOT = BASE_DIR / 'media'
 
 CSRF_FAILURE_VIEW = 'pages.views.csrf_failure'
 
@@ -186,4 +199,4 @@ EMAIL_SERVER = EMAIL_HOST_USER
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 EMAIL_ADMIN = EMAIL_HOST_USER
 
-PAGINATE_BY = 3
+PAGINATE_BY = 9
