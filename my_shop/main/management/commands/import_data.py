@@ -20,8 +20,8 @@ triples = [
 ]
 
 # Пути для копирования изображений
-images_src_directory = "data/product_images"
-images_dest_directory = "media/product_images"
+image_src_file = "data/default_image.png"
+image_dest_directory = "media/product_images"
 
 
 class Command(BaseCommand):
@@ -32,7 +32,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Копируем файлы с изображениями товаров
-        self.copy_files(images_src_directory, images_dest_directory)
+        self.copy_file(image_src_file, image_dest_directory)
 
         for triple in triples:
             parts = triple.split(":")
@@ -45,12 +45,12 @@ class Command(BaseCommand):
                     self.style.ERROR(f"Неверный формат: '{triple}'")
                 )
 
-    def copy_files(self, src_dir, dest_dir):
-        # Перебираем все файлы в исходной директории
-        for item in os.listdir(src_dir):
-            src_path = os.path.join(src_dir, item)
-            dest_path = os.path.join(dest_dir, item)
-            shutil.copy2(src_path, dest_path)
+    def copy_file(self, src_file, dest_dir):
+        if not os.path.exists(dest_dir):
+            os.makedirs(dest_dir)
+        dest_path = os.path.join(dest_dir, os.path.basename(src_file))
+        shutil.copy2(src_file, dest_path)
+        self.stdout.write(self.style.SUCCESS(f"Successfully copied {src_file} to {dest_path}"))
 
     def import_data(self, model, csv_file_path):
         with open(csv_file_path, newline="", encoding="utf-8") as csvfile:

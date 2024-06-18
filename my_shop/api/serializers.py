@@ -72,7 +72,8 @@ class GetTokenSerializer(serializers.Serializer):
     """Сериализатор для получения токена."""
 
     username = serializers.CharField(
-        max_length=USERNAME_MAX_LENGTH, validators=(UnicodeUsernameValidator())
+        max_length=USERNAME_MAX_LENGTH,
+        validators=(UnicodeUsernameValidator(),),
     )
     password = serializers.CharField(max_length=PASSWORD_MAX_LENGTH)
 
