@@ -8,22 +8,13 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from api.mixins import RetrieveListViewSet
-from api.pagination import (
-    CategoryManufacturerPagination,
-    ProductsPagination,
-    ReviewsPagination,
-)
+from api.pagination import (CategoryManufacturerPagination, ProductsPagination,
+                            ReviewsPagination)
 from api.permissions import IsAdminStaffAuthorReadOnly
-from api.serializers import (
-    CategorySerializer,
-    EmailCodeSerializer,
-    GetTokenSerializer,
-    ManufacturerSerializer,
-    ProductDetailSerializer,
-    ProductSerializer,
-    ReviewSerializer,
-    UserRegistrationSerializer,
-)
+from api.serializers import (CategorySerializer, EmailCodeSerializer,
+                             GetTokenSerializer, ManufacturerSerializer,
+                             ProductDetailSerializer, ProductSerializer,
+                             ReviewSerializer, UserRegistrationSerializer)
 from api.user_auth_utils import get_tokens_for_user
 from main.filters import ProductFilter
 from main.models import Category, Manufacturer, Product, Review
@@ -34,7 +25,7 @@ User = get_user_model()
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def email_send_confirmation_code(request):
-    """Представление для получения кода подтверждения."""
+    """Представление для отправки кода подтверждения не емейл."""
     serializer = EmailCodeSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     serializer.save()
@@ -44,7 +35,7 @@ def email_send_confirmation_code(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def user_signup(request):
-    """Представление для получения кода подтверждения."""
+    """Представление для регистрации пользователя."""
     serializer = UserRegistrationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
@@ -94,9 +85,9 @@ class ProductViewSet(RetrieveListViewSet):
             return ProductDetailSerializer
         return ProductSerializer
 
-    # Получение 5 последних отзывов
     @action(detail=False)
     def reviews(self, request):
+        """Получение 5 последних отзывов о товаре."""
         reviews = Review.objects.all()[:5]
         serializer = ReviewSerializer(reviews, many=True)
         return Response(serializer.data)
