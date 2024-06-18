@@ -1,7 +1,9 @@
 import nested_admin
 from django.contrib import admin
 
-from main.models import *
+from main.models import (Category, Colour, ColourProduct, Country,
+                         Manufacturer, Product, Shop, ShopProduct,
+                         ShopProductColourProduct)
 
 
 class ShopProductColourSetInline(nested_admin.NestedStackedInline):
@@ -21,20 +23,36 @@ class ColourProductInline(nested_admin.NestedStackedInline):
 
 
 class ProductAdmin(nested_admin.NestedModelAdmin):
-    list_display = ('name', 'price', 'sale', 'average_rating',
-                    'category', 'manufacturer')
-    search_fields = ('name',)
-    list_filter = ('category', 'manufacturer')
-    readonly_fields = ('actual_price', 'average_rating')
-    fields = ('name', 'description', 'category', 'manufacturer', 'price',
-              'sale', 'actual_price', 'is_active', 'image', 'average_rating')
+    list_display = (
+        "name",
+        "price",
+        "sale",
+        "average_rating",
+        "category",
+        "manufacturer",
+    )
+    search_fields = ("name",)
+    list_filter = ("category", "manufacturer")
+    readonly_fields = ("actual_price", "average_rating")
+    fields = (
+        "name",
+        "description",
+        "category",
+        "manufacturer",
+        "price",
+        "sale",
+        "actual_price",
+        "is_active",
+        "image",
+        "average_rating",
+    )
     inlines = (ShopProductInline, ColourProductInline)
 
 
 class ManufacturerAdmin(nested_admin.NestedModelAdmin):
-    list_display = ('name', 'country')
-    search_fields = ('name',)
-    list_filter = ('country',)
+    list_display = ("name", "country")
+    search_fields = ("name",)
+    list_filter = ("country",)
 
 
 admin.site.register(Product, ProductAdmin)

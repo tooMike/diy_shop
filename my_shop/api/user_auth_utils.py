@@ -5,6 +5,4 @@ def get_tokens_for_user(user):
     """Получаем токен для пользователя."""
     access = AccessToken.for_user(user)
 
-    return {
-        "token": str(access)
-    }
+    return {"token": str(access)}

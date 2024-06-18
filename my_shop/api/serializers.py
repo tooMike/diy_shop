@@ -13,6 +13,7 @@ from users.user_auth_utils import create_confirmation_code
 
 User = get_user_model()
 
+
 class EmailCodeSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -35,36 +36,43 @@ class EmailCodeSerializer(serializers.Serializer):
 class UserRegistrationSerializer(serializers.ModelSerializer):
     """Сериализатор для проверка кода подтверждения емейла."""
 
-    confirmation_code = serializers.SlugField(max_length=CONFIRMATION_CODE_MAX_LENGTH, write_only=True)
+    confirmation_code = serializers.SlugField(
+        max_length=CONFIRMATION_CODE_MAX_LENGTH, write_only=True
+    )
     password = serializers.CharField(max_length=128, write_only=True)
 
     def validate(self, data):
         """Проверяем корректность пары email-confirmation_code."""
         email = data.get("email")
         confirmation_code = data.get("confirmation_code")
-        email_code = EmailCode.objects.filter(email=email, code=confirmation_code).first()
+        email_code = EmailCode.objects.filter(
+            email=email, code=confirmation_code
+        ).first()
         if email_code:
             return data
-        raise serializers.ValidationError('Предоставлены неверный email или код подтверждения')
+        raise serializers.ValidationError(
+            "Предоставлены неверный email или код подтверждения"
+        )
 
     def create(self, validated_data):
         # Удаляем confirmation_code из данных
-        validated_data.pop('confirmation_code', None)
+        validated_data.pop("confirmation_code", None)
         # Шифруем пароль
-        validated_data['password'] = make_password(validated_data.get('password'))
+        validated_data["password"] = make_password(
+            validated_data.get("password")
+        )
         return super(UserRegistrationSerializer, self).create(validated_data)
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'confirmation_code', 'password')
+        fields = ("username", "email", "confirmation_code", "password")
 
 
 class GetTokenSerializer(serializers.Serializer):
     """Сериализатор для получения токена."""
 
     username = serializers.CharField(
-        max_length=USERNAME_MAX_LENGTH,
-        validators=(UnicodeUsernameValidator(),)
+        max_length=USERNAME_MAX_LENGTH, validators=(UnicodeUsernameValidator())
     )
     password = serializers.CharField(max_length=PASSWORD_MAX_LENGTH)
 
@@ -86,7 +94,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ('id', 'name', 'description', 'slug', 'is_active')
+        fields = ("id", "name", "description", "slug", "is_active")
 
 
 class ManufacturerSerializer(serializers.ModelSerializer):
@@ -94,25 +102,22 @@ class ManufacturerSerializer(serializers.ModelSerializer):
 
     is_active = serializers.BooleanField(write_only=True)
     country = serializers.SlugRelatedField(
-        queryset=Country.objects.all(),
-        slug_field='name'
+        queryset=Country.objects.all(), slug_field="name"
     )
 
     class Meta:
         model = Manufacturer
-        fields = ('id', 'name', 'country', 'slug', 'is_active')
+        fields = ("id", "name", "country", "slug", "is_active")
 
 
 class ProductSerializer(serializers.ModelSerializer):
     """Сериализатор для списка товаров."""
 
     category = serializers.SlugRelatedField(
-        queryset=Category.objects.all(),
-        slug_field="name"
+        queryset=Category.objects.all(), slug_field="name"
     )
     manufacturer = serializers.SlugRelatedField(
-        queryset=Manufacturer.objects.all(),
-        slug_field="name"
+        queryset=Manufacturer.objects.all(), slug_field="name"
     )
     num_shop = serializers.IntegerField()
     num_products = serializers.IntegerField()
@@ -120,9 +125,18 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ('name', 'price', 'sale', 'actual_price',
-                  'image', 'category', 'manufacturer', 'num_shop',
-                  'num_products', 'rating')
+        fields = (
+            "name",
+            "price",
+            "sale",
+            "actual_price",
+            "image",
+            "category",
+            "manufacturer",
+            "num_shop",
+            "num_products",
+            "rating",
+        )
 
 
 class ProductDetailSerializer(ProductSerializer):
@@ -131,28 +145,43 @@ class ProductDetailSerializer(ProductSerializer):
     manufacturer = ManufacturerSerializer()
     shops_data = serializers.SerializerMethodField()
 
-
     def get_shops_data(self, obj):
         """
         Получаем данные о наличии товаров, их цвете и количестве в магазинах.
         """
-        shops_data = [{
-            'shop_name': shopproduct.shop.name,
-            'items': [{
-                'colour_name': item.colourproduct.colour.name,
-                'quantity': item.quantity
-            } for item in shopproduct.shopproductcolourproduct.select_related(
-                'colourproduct',
-                'colourproduct__colour'
-            )]
-        } for shopproduct in obj.shopproduct.select_related('shop')]
+        shops_data = [
+            {
+                "shop_name": shopproduct.shop.name,
+                "items": [
+                    {
+                        "colour_name": item.colourproduct.colour.name,
+                        "quantity": item.quantity,
+                    }
+                    for item in shopproduct.shopproductcolourproduct.select_related(
+                        "colourproduct", "colourproduct__colour"
+                    )
+                ],
+            }
+            for shopproduct in obj.shopproduct.select_related("shop")
+        ]
         return shops_data
 
     class Meta:
         model = Product
-        fields = ('id', 'name', 'price', 'sale', 'actual_price',
-                  'image', 'category', 'manufacturer', 'shops_data', 'num_shop',
-                  'num_products', 'rating')
+        fields = (
+            "id",
+            "name",
+            "price",
+            "sale",
+            "actual_price",
+            "image",
+            "category",
+            "manufacturer",
+            "shops_data",
+            "num_shop",
+            "num_products",
+            "rating",
+        )
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -166,10 +195,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         if self.context.get("request").method == "POST":
             product = self.context.get("view").kwargs.get("product_id")
             author = self.context.get("request").user
-            if Review.objects.filter(
-                author=author,
-                product=product
-            ).exists():
+            if Review.objects.filter(author=author, product=product).exists():
                 raise serializers.ValidationError(
                     "Можно написать только 1 отзыв к товару"
                 )
@@ -177,4 +203,4 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ('id', 'text', 'photo', 'created_at', 'rating', 'author')
+        fields = ("id", "text", "photo", "created_at", "rating", "author")

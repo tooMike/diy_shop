@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count, Sum
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
@@ -38,7 +38,9 @@ def user_signup(request):
     serializer = UserRegistrationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
-    response_serializer = UserRegistrationSerializer(user, context={"request": request})
+    response_serializer = UserRegistrationSerializer(
+        user, context={"request": request}
+    )
     return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
@@ -48,7 +50,9 @@ def get_token(request):
     """Представление для получения токена."""
     serializer = GetTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    user = get_object_or_404(User, username=serializer.validated_data["username"])
+    user = get_object_or_404(
+        User, username=serializer.validated_data["username"]
+    )
     token = get_tokens_for_user(user)
     return Response(token, status=status.HTTP_200_OK)
 
@@ -67,7 +71,7 @@ class ProductViewSet(RetrieveListViewSet):
         num_products=Sum(
             "shopproduct__shopproductcolourproduct__quantity", distinct=True
         ),
-        rating=Avg('reviews__rating'),
+        rating=Avg("reviews__rating"),
     )
     serializer_class = ProductSerializer
     filter_backends = (
@@ -77,12 +81,12 @@ class ProductViewSet(RetrieveListViewSet):
     )
     filterset_class = ProductFilter
     search_fields = ("name",)
-    ordering_fields = ('name', 'actual_price', 'rating')
+    ordering_fields = ("name", "actual_price", "rating")
     lookup_url_kwarg = "product_id"
     pagination_class = ProductsPagination
 
     def get_serializer_class(self):
-        if self.action == 'retrieve':
+        if self.action == "retrieve":
             return ProductDetailSerializer
         return ProductSerializer
 
@@ -101,18 +105,12 @@ class ReviewViewSet(viewsets.ModelViewSet):
     http_method_names = ("get", "post", "patch", "delete")
     pagination_class = ReviewsPagination
     permission_classes = (IsAdminStaffAuthorReadOnly,)
-    filter_backends = (
-        filters.OrderingFilter,
-        DjangoFilterBackend
-    )
-    ordering_fields = ('created_at', 'rating')
-    filterset_fields = ('rating',)
+    filter_backends = (filters.OrderingFilter, DjangoFilterBackend)
+    ordering_fields = ("created_at", "rating")
+    filterset_fields = ("rating",)
 
     def get_product(self):
-        return get_object_or_404(
-            Product,
-            id=self.kwargs.get("product_id")
-        )
+        return get_object_or_404(Product, id=self.kwargs.get("product_id"))
 
     # Получаем все отзывы, связанные с указанным товаром
     def get_queryset(self):

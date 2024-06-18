@@ -5,12 +5,8 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView
 
-from users.forms import (
-    CodeVerificationForm,
-    CustomUserCreationForm,
-    CustomUserUpdateForm,
-    EmailVerificationForm,
-)
+from users.forms import (CodeVerificationForm, CustomUserCreationForm,
+                         CustomUserUpdateForm, EmailVerificationForm)
 from users.user_auth_utils import create_confirmation_code
 from users.views_mixins import UserNotAuthenticatedMixin
 
@@ -45,9 +41,7 @@ def email_verification(request):
         # Отправляем пользователя на форму проверки кода подтверждения
         return redirect("users:code_verification")
     return render(
-        request,
-        "registration/email_verification_form.html",
-        context
+        request, "registration/email_verification_form.html", context
     )
 
 
