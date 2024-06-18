@@ -52,7 +52,7 @@ docker compose exec backend python manage.py migrate
 http://127.0.0.1:8000/
 ```
 
-# Добавление списка ингредиентов в базу данных
+# Добавление тестовых данных в базу данных
 
 Выполнить команду import_data в контейнере backend:
 
