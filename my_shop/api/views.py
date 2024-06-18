@@ -2,18 +2,28 @@ from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count, Sum
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, mixins, status, viewsets
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from api.pagination import (CategoryManufacturerPagination, ProductsPagination,
-                            ReviewsPagination)
+from api.mixins import RetrieveListViewSet
+from api.pagination import (
+    CategoryManufacturerPagination,
+    ProductsPagination,
+    ReviewsPagination,
+)
 from api.permissions import IsAdminStaffAuthorReadOnly
-from api.serializers import (CategorySerializer, EmailCodeSerializer,
-                             GetTokenSerializer, ManufacturerSerializer,
-                             ProductDetailSerializer, ProductSerializer,
-                             ReviewSerializer, UserRegistrationSerializer)
+from api.serializers import (
+    CategorySerializer,
+    EmailCodeSerializer,
+    GetTokenSerializer,
+    ManufacturerSerializer,
+    ProductDetailSerializer,
+    ProductSerializer,
+    ReviewSerializer,
+    UserRegistrationSerializer,
+)
 from api.user_auth_utils import get_tokens_for_user
 from main.filters import ProductFilter
 from main.models import Category, Manufacturer, Product, Review
@@ -55,12 +65,6 @@ def get_token(request):
     )
     token = get_tokens_for_user(user)
     return Response(token, status=status.HTTP_200_OK)
-
-
-class RetrieveListViewSet(
-    mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
-):
-    pass
 
 
 class ProductViewSet(RetrieveListViewSet):
@@ -121,7 +125,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, product=self.get_product())
 
 
-class CategoriesViewSet(viewsets.ModelViewSet):
+class CategoriesViewSet(RetrieveListViewSet):
     """Представление для категорий."""
 
     queryset = Category.objects.filter(is_active=True)
@@ -136,7 +140,7 @@ class CategoriesViewSet(viewsets.ModelViewSet):
         return super().get_queryset()
 
 
-class ManufacrurerViewSet(viewsets.ModelViewSet):
+class ManufacrurerViewSet(RetrieveListViewSet):
     """Представление для получения производителей."""
 
     queryset = Manufacturer.objects.filter(is_active=True)
