@@ -68,10 +68,6 @@ docker compose exec backend python manage.py import_data
 http://127.0.0.1:8000/redoc/ или http://127.0.0.1:8000/swagger/
 ```
 
-# Основные технические требования
-
-Python==3.9
-
 # Примеры запросов к API
 
 ### Регистрация нового пользователя
