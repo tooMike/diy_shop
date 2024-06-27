@@ -18,7 +18,9 @@
           </li>
         {% else %}
           <li class="page-item">
-            <a class="page-link" href="?{% change_params page=page %}">{{ page }}</a>
+            <a class="page-link" href="?{% change_params page=page %}">
+              {{ page }}
+            </a>
           </li>
         {% endif %}
       {% endfor %}
