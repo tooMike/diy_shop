@@ -87,7 +87,7 @@ WSGI_APPLICATION = "my_shop.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-SQLite
+# SQLite
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -142,20 +142,20 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "static/"
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-STATIC_URL = "/backend_static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = "/backend_static"
 
 # Дополнительные директории, где собраны статические файлы проекта.
-# STATICFILES_DIRS = [
-#     BASE_DIR / 'static_dev',
-# ]
+STATICFILES_DIRS = [
+    BASE_DIR / 'static_dev',
+]
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
