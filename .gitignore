@@ -151,3 +151,4 @@ product_images/
 migrations/
 product_images.zip
 db.json
+sent_emails

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Корзина{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'main:index' %}">Главная</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Корзина</li>
+{% endblock breadcrumb %}
+
+{% block content %}
+<section class="py-4">
+    <div class="container">
+        <h2>Ваша корзина</h2>
+        {% if cart.items.count > 0 %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th>Количество</th>
+                        <th>Цена за единицу</th>
+                        <th>Сумма</th>
+                        <th></th> <!-- Колонка для удаления товара -->
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart.items %}
+                        <tr>
+                            <td>{{ item.product.name }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.product.price }}</td>
+                            <td>{{ item.total_price }}</td>
+                            <td>
+                                <a href="{% url 'cart:cart_remove' item.product.id %}" class="btn btn-danger btn-sm">Удалить</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3">Общая сумма:</td>
+                        <td>{{ cart.total_price }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+            <div class="text-end">
+                <a href="{% url 'checkout:index' %}" class="btn btn-primary">Оформить заказ</a>
+            </div>
+        {% else %}
+            <p>Ваша корзина пуста.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock content %}
