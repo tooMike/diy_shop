@@ -9,4 +9,5 @@ def change_params(context, **kwargs):
     """Функция для передачи query параметров при переходе по страницам."""
     query = context['request'].GET.dict()
     query.update(kwargs)
+    
     return urlencode(query)

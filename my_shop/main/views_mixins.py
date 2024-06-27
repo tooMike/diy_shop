@@ -50,6 +50,7 @@ class BaseObjectListViewMixin(FilterView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["shops"] = Shop.objects.all()
+
         # Передаем в контекст все shop_id из url (для фильтра по магазинам)
         context["selected_shop_ids"] = self.request.GET.getlist("shop_id")
         return context
