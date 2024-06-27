@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load cart_tags %}
 
 {% block title %}Корзина{% endblock %}
 
@@ -9,27 +10,43 @@
 {% endblock breadcrumb %}
 
 {% block content %}
+<style>
+    .btn-compact {
+        padding: 0.25rem 0.5rem; /* Уменьшаем padding */
+        border: none; /* Убираем границу */
+        line-height: 1; /* Уменьшаем высоту строки */
+        vertical-align: middle; /* Выравнивание по вертикали */
+    }
+</style>
 <section class="py-4">
     <div class="container">
         <h2>Ваша корзина</h2>
-        {% if cart.items.count > 0 %}
+        {% if cart.total_quantity > 0 %}
             <table class="table">
                 <thead>
                     <tr>
                         <th>Товар</th>
                         <th>Количество</th>
                         <th>Цена за единицу</th>
+                        <th>Цена со скидкой</th>
                         <th>Сумма</th>
+                        <th>Экономия</th>
                         <th></th> <!-- Колонка для удаления товара -->
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in cart.items %}
+                    {% for item in cart %}
                         <tr>
-                            <td>{{ item.product.name }}</td>
-                            <td>{{ item.quantity }}</td>
+                            <td><a href="{% url "main:product_detail" item.product.id %}">{{ item.product.name }}</a></td>
+                            <td>
+                                <a href="{% url 'cart:cart_change' item.product.id %}" class="btn btn-sm btn-compact btn-outline-secondary">-</a>
+                                {{ item.quantity }}
+                                <a href="{% url 'cart:cart_add' item.product.id %}" class="btn btn-sm btn-compact btn-outline-secondary">+</a>
+                            </td>
                             <td>{{ item.product.price }}</td>
-                            <td>{{ item.total_price }}</td>
+                            <td>{{ item.product.actual_price }}</td>
+                            <td>{{ item.product_price }}</td>
+                            <td>{{ item|total_saving }}</td>
                             <td>
                                 <a href="{% url 'cart:cart_remove' item.product.id %}" class="btn btn-danger btn-sm">Удалить</a>
                             </td>
@@ -38,15 +55,15 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="3">Общая сумма:</td>
+                        <td colspan="4">Общая сумма:</td>
                         <td>{{ cart.total_price }}</td>
                         <td></td>
                     </tr>
                 </tfoot>
             </table>
-            <div class="text-end">
+            {% comment %} <div class="text-end">
                 <a href="{% url 'checkout:index' %}" class="btn btn-primary">Оформить заказ</a>
-            </div>
+            </div> {% endcomment %}
         {% else %}
             <p>Ваша корзина пуста.</p>
         {% endif %}

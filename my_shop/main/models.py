@@ -54,13 +54,13 @@ class Colour(models.Model):
 class Country(models.Model):
     name = models.CharField(max_length=50, verbose_name="Название страны")
 
-    def __str__(self) -> str:
-        return self.name
-
     class Meta:
         verbose_name = "страна"
         verbose_name_plural = "Страны"
         default_related_name = "country"
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Manufacturer(models.Model):
@@ -73,13 +73,13 @@ class Manufacturer(models.Model):
     slug = models.SlugField(unique=True, verbose_name="Идентификатор")
     is_active = models.BooleanField(default=True, verbose_name="Опубликовано")
 
-    def __str__(self) -> str:
-        return self.name
-
     class Meta:
         verbose_name = "производитель"
         verbose_name_plural = "Производители"
         default_related_name = "manufacturer"
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Product(models.Model):
