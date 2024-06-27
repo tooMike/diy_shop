@@ -99,6 +99,9 @@
     
             // Очищаем все параметры магазинов перед добавлением новых
             urlParams.delete('shop_id');
+
+            // Удаление параметра page, чтобы сбросить пагинацию
+            urlParams.delete('page');
     
             inputs.forEach(input => {
                 if (input.type === 'checkbox') {
