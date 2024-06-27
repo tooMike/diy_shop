@@ -8,11 +8,12 @@ register = template.Library()
 @register.simple_tag
 def product_count(request):
     """Метод для передачи количества товаров в корзине."""
-    cart = ShoppingCart.objects.filter(
-        user=request.user
-    )
-    if cart.exists():
-        return cart.total_quantity()
+    if request.user.is_authenticated:
+        cart = ShoppingCart.objects.filter(
+            user=request.user
+        )
+        if cart.exists():
+            return cart.total_quantity()
     return 0
 
 
