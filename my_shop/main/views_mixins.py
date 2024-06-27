@@ -61,8 +61,8 @@ class ObjectListViewMixin(BaseObjectListViewMixin):
     Переопределять в наследуемых классах нужно: slug_url_kwarg и related_model.
     """
 
-    slug_url_kwarg = None
-    related_model = None
+    slug_url_kwarg = Category
+    related_model = "category_slug"
 
     def get_related_object(self):
         """Получаем нужный связанный объект."""
