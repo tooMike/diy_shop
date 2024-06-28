@@ -22,12 +22,11 @@ services:
       - media:/app/media
 
   nginx:
-    image: nginx:1.25.4-alpine
+    build: ./nginx/
     depends_on:
       - backend
     ports:
       - "8000:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
       - media:/media
       - static:/backend_static
