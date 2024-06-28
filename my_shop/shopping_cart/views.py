@@ -10,7 +10,7 @@ def show_cart(request):
     shopping_carts = ShoppingCart.objects.filter(
         user=request.user
     ).prefetch_related("product")
-    context = {"cart": shopping_carts}
+    context = {"carts": shopping_carts}
 
     return render(request, "shopping_cart/cart.html", context=context)
 
@@ -55,11 +55,10 @@ def cart_change(request, product_id):
     return redirect(request.META["HTTP_REFERER"])
 
 
-def cart_remove(request, product_id):
-    """Удаление товаров из корзины."""
-    product = Product.objects.get(id=product_id)
+def cart_remove(request, cart_id):
+    """Удаление позиций из корзины."""
+
     if request.user.is_authenticated:
-        cart = ShoppingCart.objects.filter(user=request.user, product=product)
-        if cart.exists():
-            cart.delete()
+        cart = ShoppingCart.objects.get(id=cart_id)
+        cart.delete()
     return redirect(request.META["HTTP_REFERER"])

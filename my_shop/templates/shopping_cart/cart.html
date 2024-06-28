@@ -21,7 +21,7 @@
 <section class="py-4">
     <div class="container">
         <h2>Ваша корзина</h2>
-        {% if cart.total_quantity > 0 %}
+        {% if carts.total_quantity > 0 %}
             <table class="table">
                 <thead>
                     <tr>
@@ -35,20 +35,20 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in cart %}
+                    {% for cart in carts %}
                         <tr>
-                            <td><a href="{% url "main:product_detail" item.product.id %}">{{ item.product.name }}</a></td>
+                            <td><a href="{% url "main:product_detail" cart.product.id %}">{{ cart.product.name }}</a></td>
                             <td>
-                                <a href="{% url 'cart:cart_change' item.product.id %}" class="btn btn-sm btn-compact btn-outline-secondary">-</a>
-                                {{ item.quantity }}
-                                <a href="{% url 'cart:cart_add' item.product.id %}" class="btn btn-sm btn-compact btn-outline-secondary">+</a>
+                                <a href="{% url 'cart:cart_change' cart.product.id %}" class="btn btn-sm btn-compact btn-outline-secondary">-</a>
+                                {{ cart.quantity }}
+                                <a href="{% url 'cart:cart_add' cart.product.id %}" class="btn btn-sm btn-compact btn-outline-secondary">+</a>
                             </td>
-                            <td>{{ item.product.price }}</td>
-                            <td>{{ item.product.actual_price }}</td>
-                            <td>{{ item.product_price }}</td>
-                            <td>{{ item|total_saving }}</td>
+                            <td>{{ cart.product.price }}</td>
+                            <td>{{ cart.product.actual_price }}</td>
+                            <td>{{ cart.product_price }}</td>
+                            <td>{{ cart|total_saving }}</td>
                             <td>
-                                <a href="{% url 'cart:cart_remove' item.product.id %}" class="btn btn-danger btn-sm">Удалить</a>
+                                <a href="{% url 'cart:cart_remove' cart.id %}" class="btn btn-danger btn-sm">Удалить</a>
                             </td>
                         </tr>
                     {% endfor %}
@@ -61,9 +61,10 @@
                     </tr>
                 </tfoot>
             </table>
-            {% comment %} <div class="text-end">
-                <a href="{% url 'checkout:index' %}" class="btn btn-primary">Оформить заказ</a>
-            </div> {% endcomment %}
+            
+            <div class="text-end">
+                <a href="" class="btn btn-primary">Оформить заказ</a>
+            </div>
         {% else %}
             <p>Ваша корзина пуста.</p>
         {% endif %}

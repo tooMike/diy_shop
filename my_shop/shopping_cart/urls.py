@@ -14,7 +14,7 @@ urlpatterns = [
         name="cart_change",
     ),
     path(
-        "cart_remove/<int:product_id>",
+        "cart_remove/<int:cart_id>",
         views.cart_remove,
         name="cart_remove",
     ),
