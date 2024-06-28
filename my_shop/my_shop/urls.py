@@ -7,6 +7,8 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
+from users.views import UserLoginView
+
 handler404 = "pages.views.page_not_found"
 handler500 = "pages.views.server_error"
 
@@ -25,6 +27,7 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("auth/login/", UserLoginView.as_view(), name="login"),
     path("auth/", include("django.contrib.auth.urls")),
     path("user/", include("users.urls")),
     path("pages/", include("pages.urls")),

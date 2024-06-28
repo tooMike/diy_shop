@@ -1,12 +1,19 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView
 from django.core.mail import send_mail
+from django.db.models import F
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView
 
-from users.forms import (CodeVerificationForm, CustomUserCreationForm,
-                         CustomUserUpdateForm, EmailVerificationForm)
+from shopping_cart.models import ShoppingCart
+from users.forms import (
+    CodeVerificationForm,
+    CustomUserCreationForm,
+    CustomUserUpdateForm,
+    EmailVerificationForm,
+)
 from users.user_auth_utils import create_confirmation_code
 from users.views_mixins import UserNotAuthenticatedMixin
 
@@ -30,7 +37,10 @@ def email_verification(request):
         user_email = form.cleaned_data["email"]
         send_mail(
             subject="Регистрация на сайте ShoppingOnline",
-            message=f"Ваш код подтверждения: {confirmation_code}",
+            message=f"""
+            Подтверждение регистрации для пользователя: {user_email}
+            Ваш код подтверждения: {confirmation_code}
+            """,
             from_email="sir.petri-petrov@yandex.ru",
             recipient_list=[user_email],
             fail_silently=True,
@@ -89,3 +99,61 @@ class UserProfileView(LoginRequiredMixin, UpdateView):
 
     def get_object(self):
         return self.request.user
+
+
+class UserLoginView(LoginView):
+    """
+    Добавляем логику, чтобы при входе в аккаунт корзина пользователя
+    не сбрасывалась. Переводим привязку корзины с session_key на user
+    """
+
+    def form_valid(self, form):
+        session_key = self.request.session.session_key
+        user = form.get_user()
+        if session_key:
+            # Проверяем, нет ли в корзине залогиненного пользователя
+            # тех же товаров, что были у анонимного
+            # если есть, то увеличиваем их количество
+            anon_cart_items = ShoppingCart.objects.filter(
+                session_key=session_key
+            ).select_related("product")
+            user_cart_items = ShoppingCart.objects.filter(
+                user=user
+            ).select_related("product")
+
+            # Обрабатываем данные так, чтобы избежать
+            # множества обращений к БД в цикле
+            anonim_item_quantities = {
+                item.product: [item.quantity, item] for item in anon_cart_items
+            }
+            user_item_quantities = {
+                item.product: [item.quantity, item] for item in user_cart_items
+            }
+
+            to_update_quantity = []
+            to_update_user = []
+
+            for product, info in anonim_item_quantities.items():
+                if product in user_item_quantities:
+                    user_item = user_item_quantities[product][1]
+                    user_item.quantity += info[0]
+                    to_update_quantity.append(user_item)
+                else:
+                    info[1].user = user
+                    to_update_user.append(info[1])
+
+            if to_update_quantity:
+                ShoppingCart.objects.bulk_update(
+                    to_update_quantity, ["quantity"]
+                )
+            if to_update_user:
+                ShoppingCart.objects.bulk_update(to_update_user, ["user"])
+
+            # Удаляем корзины анонимного пользователя, которые остались
+            # после добавления quantity к корзинам
+            # залогиненного пользователя
+            ShoppingCart.objects.filter(
+                session_key=session_key, user=None
+            ).delete()
+
+        return super().form_valid(form)

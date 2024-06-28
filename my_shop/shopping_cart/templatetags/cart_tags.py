@@ -12,8 +12,12 @@ def product_count(request):
         cart = ShoppingCart.objects.filter(
             user=request.user
         )
-        if cart.exists():
-            return cart.total_quantity()
+    else:
+        cart = ShoppingCart.objects.filter(
+            session_key=request.session.session_key
+        )
+    if cart.exists():
+        return cart.total_quantity()
     return 0
 
 
