@@ -62,14 +62,14 @@ class ObjectListViewMixin(BaseObjectListViewMixin):
     Переопределять в наследуемых классах нужно: slug_url_kwarg и related_model.
     """
 
-    slug_url_kwarg = Category
-    related_model = "category_slug"
+    slug_url_kwarg = "category_slug"
+    related_model = Category
 
     def get_related_object(self):
         """Получаем нужный связанный объект."""
         related_object = get_object_or_404(
             self.related_model,
-            slug=self.kwargs[self.slug_url_kwarg],
+            slug=self.kwargs.get(self.slug_url_kwarg),
             is_active=True,
         )
         return related_object
@@ -78,11 +78,14 @@ class ObjectListViewMixin(BaseObjectListViewMixin):
         """Получаем все товары связанные с указанной моделью"""
         queryset = super().get_queryset()
         if self.related_model is not None:
-            related_object = self.get_related_object()
             if self.related_model == Category:
-                queryset = queryset.filter(category=related_object.id)
+                queryset = queryset.filter(
+                    category__slug=self.kwargs.get(self.slug_url_kwarg)
+                )
             if self.related_model == Manufacturer:
-                queryset = queryset.filter(manufacturer=related_object.id)
+                queryset = queryset.filter(
+                    manufacturer__slug=self.kwargs.get(self.slug_url_kwarg)
+                )
         return queryset
 
     def get_context_data(self, **kwargs):
