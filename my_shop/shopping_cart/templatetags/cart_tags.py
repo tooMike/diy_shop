@@ -9,9 +9,7 @@ register = template.Library()
 def product_count(request):
     """Метод для передачи количества товаров в корзине."""
     if request.user.is_authenticated:
-        cart = ShoppingCart.objects.filter(
-            user=request.user
-        )
+        cart = ShoppingCart.objects.filter(user=request.user)
     else:
         cart = ShoppingCart.objects.filter(
             session_key=request.session.session_key

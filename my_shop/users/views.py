@@ -2,18 +2,13 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.core.mail import send_mail
-from django.db.models import F
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView
 
 from shopping_cart.models import ShoppingCart
-from users.forms import (
-    CodeVerificationForm,
-    CustomUserCreationForm,
-    CustomUserUpdateForm,
-    EmailVerificationForm,
-)
+from users.forms import (CodeVerificationForm, CustomUserCreationForm,
+                         CustomUserUpdateForm, EmailVerificationForm)
 from users.user_auth_utils import create_confirmation_code
 from users.views_mixins import UserNotAuthenticatedMixin
 
