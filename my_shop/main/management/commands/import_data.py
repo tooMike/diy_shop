@@ -17,6 +17,8 @@ triples = [
     "main:ShopProduct:data/shopproduct.csv",
     "main:ColourProduct:data/colourproduct.csv",
     "main:ShopProductColourProduct:data/shopproductcolourproduct.csv",
+    "users:MyUser:data/users.csv",
+    "main:Review:data/review.csv",
 ]
 
 # Пути для копирования изображений
@@ -25,10 +27,10 @@ image_dest_directory = "media/product_images"
 
 
 class Command(BaseCommand):
-    help = (
-        "Загрузка данных из csv-файлов в модели. ",
-        "Пример команды: python manage.py import_data ",
-    )
+    help = """
+        Загрузка данных из csv-файлов в модели.
+        Пример команды: python manage.py import_data
+        """
 
     def handle(self, *args, **options):
         # Копируем файлы с изображениями товаров
@@ -50,7 +52,11 @@ class Command(BaseCommand):
             os.makedirs(dest_dir)
         dest_path = os.path.join(dest_dir, os.path.basename(src_file))
         shutil.copy2(src_file, dest_path)
-        self.stdout.write(self.style.SUCCESS(f"Successfully copied {src_file} to {dest_path}"))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Successfully copied {src_file} to {dest_path}"
+            )
+        )
 
     def import_data(self, model, csv_file_path):
         with open(csv_file_path, newline="", encoding="utf-8") as csvfile:
@@ -68,4 +74,6 @@ class Command(BaseCommand):
                 # Распаковываем словарь и создаем объект модели
                 model.objects.create(**data)
 
-        self.stdout.write(self.style.SUCCESS("Successfully imported data"))
+        self.stdout.write(
+            self.style.SUCCESS(f"Successfully imported data: {model}")
+        )
