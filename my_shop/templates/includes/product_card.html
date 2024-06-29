@@ -1,5 +1,7 @@
 {% load static %}
 {% load rating_tags %}
+{% load cart_tags %}
+
 
 <div class="col mb-5">
     <div class="card h-100">
@@ -63,9 +65,23 @@
                     {{ product.price }} руб.
                 {% endif %}
             </div>
-            <div class="text-center">
-                <a class="btn btn-outline-dark mt-auto" href="{% url "cart:cart_add" product.id %}">Добавить в корзину</a>
-            </div>
+            {% if product.id in products_in_user_shopping_carts %}
+                <div class="text-center">
+                    <p>Товар уже в корзине</p>
+                    <div class="btn-group" role="group" aria-label="Quantity modification">
+                        <a href="{% url "cart:cart_change" product.id %}" class="btn btn-outline-secondary">-</a>
+                        <span class="btn btn-outline-secondary disabled" aria-disabled="true">
+                            {{ products_in_user_shopping_carts|get_quantity_from_product_dict:product.id }}
+                        </span>
+                        <a href="{% url "cart:cart_add" product.id %}" class="btn btn-outline-secondary">+</a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center">
+                    <a class="btn btn-outline-dark mt-auto" href="{% url 'cart:cart_add' product.id %}">Добавить в корзину</a>
+                </div>
+            {% endif %}
+
         </div>
     </div>
 </div>

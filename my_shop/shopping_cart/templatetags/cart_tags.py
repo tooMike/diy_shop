@@ -23,4 +23,11 @@ def product_count(request):
 
 @register.filter
 def total_saving(item):
+    """Метод для получения суммарной экономии по каждой позиции в корзине."""
     return (item.product.price - item.product.actual_price) * item.quantity
+
+
+@register.filter
+def get_quantity_from_product_dict(product_dict, product):
+    """Метод для извлечения значения по ключу из словаря в шаблоне."""
+    return product_dict.get(product, 0)

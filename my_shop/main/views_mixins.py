@@ -5,6 +5,7 @@ from django_filters.views import FilterView
 
 from main.filters import ProductFilter
 from main.models import Category, Manufacturer, Product, Shop
+from shopping_cart.models import ShoppingCart
 
 paginate_by = getattr(settings, "PAGINATE_BY", 10)
 
@@ -50,9 +51,30 @@ class BaseObjectListViewMixin(FilterView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["shops"] = Shop.objects.all()
-
         # Передаем в контекст все shop_id из url (для фильтра по магазинам)
         context["selected_shop_ids"] = self.request.GET.getlist("shop_id")
+
+        # Добавляем в контекст словарь {id_товара: количество_в_корзине, ...}
+        # текущего пользователя для проверки в шаблоне,
+        # есть ли конкретный товар в корзине пользователя
+        # и отображения количества товара в корзине
+        users_shopping_carts = ShoppingCart.objects.all().select_related(
+            "product"
+        )
+        if self.request.user.is_authenticated:
+            users_shopping_carts = users_shopping_carts.filter(
+                user=self.request.user
+            )
+        else:
+            users_shopping_carts = users_shopping_carts.filter(
+                session_key=self.request.session.session_key
+            )
+        products_in_user_shopping_carts = {}
+        for cart in users_shopping_carts:
+            products_in_user_shopping_carts[cart.product.id] = cart.quantity
+        context["products_in_user_shopping_carts"] = (
+            products_in_user_shopping_carts
+        )
         return context
 
 
