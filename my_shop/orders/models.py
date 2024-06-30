@@ -31,7 +31,7 @@ class Order(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True, verbose_name="Дата создания заказа"
     )
-    phone_number = models.CharField(
+    phone = models.CharField(
         verbose_name="Номер телефона", max_length=20
     )
     requires_delivery = models.BooleanField(

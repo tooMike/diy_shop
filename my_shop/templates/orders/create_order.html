@@ -40,34 +40,51 @@
                     </tr>
                 </tfoot>
             </table>
-            <form method="post" id="orderForm">
+            <form method="post" id="orderForm" action="{% url "order:create_order" %}">
                 {% csrf_token %}
                 <div class="row">
                     <div class="col-md-4">
                         <label for="firstName" class="form-label">Имя*</label>
-                        <input type="text" class="form-control" id="firstName" name="first_name" required>
+                        <input type="text" class="form-control" id="firstName" name="first_name" 
+                            value="{% if form.first_name.value %}{{ form.first_name.value }}{% endif %}"
+                            required>
+                        {% if from.first_name.errors %}
+                            <div class="alert alert-danger alert-dismissable fade show">{{ from.first_name.errors}}</div>
+                        {% endif %}
                     </div>
                     <div class="col-md-4">
                         <label for="lastName" class="form-label">Фамилия*</label>
-                        <input type="text" class="form-control" id="lastName" name="last_name" required>
+                        <input type="text" class="form-control" id="lastName" name="last_name"
+                            value="{% if form.last_name.value %}{{ form.last_name.value }}{% endif %}" 
+                            required>
+                        {% if from.last_name.errors %}
+                            <div class="alert alert-danger alert-dismissable fade show">{{ from.last_name.errors}}</div>
+                        {% endif %}
                     </div>
                     <div class="col-md-4">
                         <label for="phone" class="form-label">Телефон*</label>
-                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                        <input type="tel" class="form-control" id="phone" name="phone"
+                            value="{% if form.phone.value %}{{ form.phone.value }}{% endif %}" 
+                            required>
+                        {% if from.phone.errors %}
+                            <div class="alert alert-danger alert-dismissable fade show">{{ from.phone.errors}}</div>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="mb-3">
                     <div>Способ доставки*:</div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="delivery_method" id="delivery" value="city_delivery" onchange="toggleDeliveryForm(true)">
-                        <label class="form-check-label" for="delivery">
-                            Доставка по городу
+                        <input class="form-check-input" type="radio" name="requires_delivery" id="requires_delivery"
+                            value="0" onchange="toggleDeliveryForm(false)" checked>
+                        <label class="form-check-label" for="requires_delivery">
+                            Забрать в магазине
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="delivery_method" id="pickup" value="pickup" onchange="toggleDeliveryForm(false)">
-                        <label class="form-check-label" for="pickup">
-                            Забрать в магазине
+                        <input class="form-check-input" type="radio" name="requires_delivery" id="requires_delivery" 
+                            value="1" onchange="toggleDeliveryForm(true)">
+                        <label class="form-check-label" for="requires_delivery">
+                            Доставка по городу
                         </label>
                     </div>
                 </div>
@@ -75,25 +92,25 @@
                     <div class="row">
                         <div class="col-md-3">
                             <label for="city" class="form-label">Город*</label>
-                            <input type="text" class="form-control" id="city" name="city">
+                            <input type="text" class="form-control" id="city" name="delivery_city"
+                                value="{% if form.delivery_city.value %}{{ form.delivery_city.value }}{% endif %}" >
+                            {% if from.delivery_city.errors %}
+                                <div class="alert alert-danger alert-dismissable fade show">{{ from.delivery_city.errors}}</div>
+                            {% endif %}
                         </div>
                         <div class="col-md-3">
-                            <label for="street" class="form-label">Улица*</label>
-                            <input type="text" class="form-control" id="street" name="street">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="building" class="form-label">Дом*</label>
-                            <input type="text" class="form-control" id="building" name="building">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="apartment" class="form-label">Квартира*</label>
-                            <input type="text" class="form-control" id="apartment" name="apartment">
+                            <label for="delivery_adress" class="form-label">Улица, дом, квартира*</label>
+                            <input type="text" class="form-control" id="delivery_adress" name="delivery_adress"
+                                value="{% if form.delivery_adress.value %}{{ form.delivery_adress.value }}{% endif %}">
+                            {% if from.delivery_adress.errors %}
+                                <div class="alert alert-danger alert-dismissable fade show">{{ from.delivery_adress.errors}}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
-                <div id="pickupInfo" style="display:none;">
+                <div id="pickupInfo" style="display:block;">
                     <label for="storeLocation" class="form-label">Выберите магазин*</label>
-                    <select class="form-select" id="storeLocation" name="store_location">
+                    <select class="form-select" id="storeLocation" name="shop">
                         <option value="">Выберите магазин...</option>
                         {% for store in stores %}
                             <option value="{{ store.id }}">{{ store.name }}</option>
@@ -102,9 +119,9 @@
                 </div>
                 <div class="mb-3">
                     <label for="paymentMethod" class="form-label">Способ оплат*</label>
-                    <select class="form-select" id="paymentMethod" name="payment_method" required>
-                        <option value="card">Картой онлайн</option>
-                        <option value="cash">Наличными при получении</option>
+                    <select class="form-select" id="paymentMethod" name="payment_on_get" required>
+                        <option value="0">Картой онлайн</option>
+                        <option value="1">Наличными при получении</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary mt-3">Заказать</button>
