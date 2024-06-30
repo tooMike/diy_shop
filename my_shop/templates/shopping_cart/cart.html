@@ -12,10 +12,10 @@
 {% block content %}
 <style>
     .btn-compact {
-        padding: 0.25rem 0.5rem; /* Уменьшаем padding */
-        border: none; /* Убираем границу */
-        line-height: 1; /* Уменьшаем высоту строки */
-        vertical-align: middle; /* Выравнивание по вертикали */
+        padding: 0.25rem 0.5rem;
+        border: none;
+        line-height: 1;
+        vertical-align: middle;
     }
 </style>
 <section class="py-4">
@@ -63,7 +63,7 @@
             </table>
             
             <div class="text-end">
-                <a href="" class="btn btn-primary">Оформить заказ</a>
+                <a href="{% url "order:create_order" %}" class="btn btn-primary">Оформить заказ</a>
             </div>
         {% else %}
             <p>Ваша корзина пуста.</p>

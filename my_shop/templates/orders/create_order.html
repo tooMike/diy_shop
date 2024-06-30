@@ -28,7 +28,7 @@
                         <tr>
                             <td><a href="{% url "main:product_detail" cart.product.id %}">{{ cart.product.name }}</a></td>
                             <td>{{ cart.quantity }}</td>
-                            <td>{{ cart.product.price }}</td>
+                            <td>{{ cart.product.actual_price }}</td>
                             <td>{{ cart.product_price }}</td>
                         </tr>
                     {% endfor %}
@@ -44,20 +44,20 @@
                 {% csrf_token %}
                 <div class="row">
                     <div class="col-md-4">
-                        <label for="firstName" class="form-label">Имя</label>
+                        <label for="firstName" class="form-label">Имя*</label>
                         <input type="text" class="form-control" id="firstName" name="first_name" required>
                     </div>
                     <div class="col-md-4">
-                        <label for="lastName" class="form-label">Фамилия</label>
+                        <label for="lastName" class="form-label">Фамилия*</label>
                         <input type="text" class="form-control" id="lastName" name="last_name" required>
                     </div>
                     <div class="col-md-4">
-                        <label for="phone" class="form-label">Телефон</label>
+                        <label for="phone" class="form-label">Телефон*</label>
                         <input type="tel" class="form-control" id="phone" name="phone" required>
                     </div>
                 </div>
                 <div class="mb-3">
-                    <div>Способ доставки:</div>
+                    <div>Способ доставки*:</div>
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="delivery_method" id="delivery" value="city_delivery" onchange="toggleDeliveryForm(true)">
                         <label class="form-check-label" for="delivery">
@@ -74,25 +74,25 @@
                 <div id="deliveryInfo" style="display:none;">
                     <div class="row">
                         <div class="col-md-3">
-                            <label for="city" class="form-label">Город</label>
+                            <label for="city" class="form-label">Город*</label>
                             <input type="text" class="form-control" id="city" name="city">
                         </div>
                         <div class="col-md-3">
-                            <label for="street" class="form-label">Улица</label>
+                            <label for="street" class="form-label">Улица*</label>
                             <input type="text" class="form-control" id="street" name="street">
                         </div>
                         <div class="col-md-3">
-                            <label for="building" class="form-label">Дом</label>
+                            <label for="building" class="form-label">Дом*</label>
                             <input type="text" class="form-control" id="building" name="building">
                         </div>
                         <div class="col-md-3">
-                            <label for="apartment" class="form-label">Квартира</label>
+                            <label for="apartment" class="form-label">Квартира*</label>
                             <input type="text" class="form-control" id="apartment" name="apartment">
                         </div>
                     </div>
                 </div>
                 <div id="pickupInfo" style="display:none;">
-                    <label for="storeLocation" class="form-label">Выберите магазин</label>
+                    <label for="storeLocation" class="form-label">Выберите магазин*</label>
                     <select class="form-select" id="storeLocation" name="store_location">
                         <option value="">Выберите магазин...</option>
                         {% for store in stores %}
@@ -101,13 +101,13 @@
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label for="paymentMethod" class="form-label">Способ оплаты</label>
+                    <label for="paymentMethod" class="form-label">Способ оплат*</label>
                     <select class="form-select" id="paymentMethod" name="payment_method" required>
                         <option value="card">Картой онлайн</option>
                         <option value="cash">Наличными при получении</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary mt-3">Оформить заказ</button>
+                <button type="submit" class="btn btn-primary mt-3">Заказать</button>
             </form>
         {% else %}
             <p>Ваша корзина пуста.</p>
