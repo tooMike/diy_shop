@@ -11,9 +11,12 @@ def product_count(request):
     if request.user.is_authenticated:
         cart = ShoppingCart.objects.filter(user=request.user)
     else:
-        cart = ShoppingCart.objects.filter(
-            session_key=request.session.session_key
-        )
+        if request.session.session_key:
+            cart = ShoppingCart.objects.filter(
+                session_key=request.session.session_key
+            )
+        else:
+            return 0
     if cart.exists():
         return cart.total_quantity()
     return 0

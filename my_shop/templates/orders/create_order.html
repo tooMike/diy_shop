@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load static %}
+{% load cart_tags %}
+
+{% block title %}Оформление заказа{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'main:index' %}">Главная</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Оформление заказа</li>
+{% endblock breadcrumb %}
+
+{% block content %}
+<section class="py-4">
+    <div class="container">
+        <h2>Оформление заказа</h2>
+        {% if carts.total_quantity > 0 %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th>Количество</th>
+                        <th>Цена за единицу</th>
+                        <th>Сумма</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cart in carts %}
+                        <tr>
+                            <td><a href="{% url "main:product_detail" cart.product.id %}">{{ cart.product.name }}</a></td>
+                            <td>{{ cart.quantity }}</td>
+                            <td>{{ cart.product.price }}</td>
+                            <td>{{ cart.product_price }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3">Итоговая сумма:</td>
+                        <td>{{ carts.total_price }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+            <form method="post" id="orderForm">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-4">
+                        <label for="firstName" class="form-label">Имя</label>
+                        <input type="text" class="form-control" id="firstName" name="first_name" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="lastName" class="form-label">Фамилия</label>
+                        <input type="text" class="form-control" id="lastName" name="last_name" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="phone" class="form-label">Телефон</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div>Способ доставки:</div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="delivery_method" id="delivery" value="city_delivery" onchange="toggleDeliveryForm(true)">
+                        <label class="form-check-label" for="delivery">
+                            Доставка по городу
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="delivery_method" id="pickup" value="pickup" onchange="toggleDeliveryForm(false)">
+                        <label class="form-check-label" for="pickup">
+                            Забрать в магазине
+                        </label>
+                    </div>
+                </div>
+                <div id="deliveryInfo" style="display:none;">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="city" class="form-label">Город</label>
+                            <input type="text" class="form-control" id="city" name="city">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="street" class="form-label">Улица</label>
+                            <input type="text" class="form-control" id="street" name="street">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="building" class="form-label">Дом</label>
+                            <input type="text" class="form-control" id="building" name="building">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="apartment" class="form-label">Квартира</label>
+                            <input type="text" class="form-control" id="apartment" name="apartment">
+                        </div>
+                    </div>
+                </div>
+                <div id="pickupInfo" style="display:none;">
+                    <label for="storeLocation" class="form-label">Выберите магазин</label>
+                    <select class="form-select" id="storeLocation" name="store_location">
+                        <option value="">Выберите магазин...</option>
+                        {% for store in stores %}
+                            <option value="{{ store.id }}">{{ store.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="paymentMethod" class="form-label">Способ оплаты</label>
+                    <select class="form-select" id="paymentMethod" name="payment_method" required>
+                        <option value="card">Картой онлайн</option>
+                        <option value="cash">Наличными при получении</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Оформить заказ</button>
+            </form>
+        {% else %}
+            <p>Ваша корзина пуста.</p>
+        {% endif %}
+    </div>
+</section>
+<script>
+function toggleDeliveryForm(isDelivery) {
+    document.getElementById('deliveryInfo').style.display = isDelivery ? 'block' : 'none';
+    document.getElementById('pickupInfo').style.display = !isDelivery ? 'block' : 'none';
+}
+</script>
+{% endblock content %}
