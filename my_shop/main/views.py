@@ -24,18 +24,20 @@ def product_detail_view(request, product_id, review_id=None):
     # Добавляем в контекст данные о товаре
     shops_data = [
         {
-            "colour": colourproduct,
-            "items": [
-                {"shop": item.shop, "quantity": item.quantity}
-                for item in colourproduct.colourproductshop.select_related("shop")
-                if item.quantity > 0
-            ],
+            "color": colorproduct,
+            "items": items
         }
-        for colourproduct in product.colourproduct.select_related("colour")
+        for colorproduct in product.colorproduct.select_related("color")
+        for items in [
+            [
+                {"shop": item.shop, "quantity": item.quantity}
+                for item in colorproduct.colorproductshop.order_by("shop").select_related("shop")
+                if item.quantity > 0
+            ]
+        ]
+        if items  # Добавляем в shops_data только если есть items
     ]
 
-    # Добавляем список цветов товара
-    product_colour = product.colour.all()
     # Добавляем выбранные пользователем цвета
     selected_colors = request.GET.getlist("color")
 
@@ -65,7 +67,6 @@ def product_detail_view(request, product_id, review_id=None):
     context = {
         "product": product,
         "shops_data": shops_data,
-        "product_colour": product_colour,
         "selected_colors": selected_colors,
         "form": form,
         "reviews": reviews,

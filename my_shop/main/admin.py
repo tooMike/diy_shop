@@ -1,25 +1,26 @@
 import nested_admin
 from django.contrib import admin
 
-from main.models import (Category, Colour, ColourProduct, Country,
+from main.models import (Category, Color, ColorProduct, Country,
                          Manufacturer, Product, Shop,
-                         ColourProductShop)
+                         ColorProductShop)
 
 
 
-class ColourProductShopInline(nested_admin.NestedStackedInline):
-    model = ColourProductShop
+class ColorProductShopInline(nested_admin.NestedStackedInline):
+    model = ColorProductShop
     extra = 0
 
 
-class ColourProductInline(nested_admin.NestedStackedInline):
-    model = ColourProduct
+class ColorProductInline(nested_admin.NestedStackedInline):
+    model = ColorProduct
     extra = 0
-    inlines = (ColourProductShopInline,)
+    inlines = (ColorProductShopInline,)
 
 
 class ProductAdmin(nested_admin.NestedModelAdmin):
     list_display = (
+        "id",
         "name",
         "price",
         "sale",
@@ -42,7 +43,7 @@ class ProductAdmin(nested_admin.NestedModelAdmin):
         "image",
         "average_rating",
     )
-    inlines = (ColourProductInline,)
+    inlines = (ColorProductInline,)
 
 
 class ManufacturerAdmin(nested_admin.NestedModelAdmin):
@@ -52,7 +53,7 @@ class ManufacturerAdmin(nested_admin.NestedModelAdmin):
 
 
 admin.site.register(Product, ProductAdmin)
-admin.site.register(Colour)
+admin.site.register(Color)
 admin.site.register(Manufacturer, ManufacturerAdmin)
 admin.site.register(Country)
 admin.site.register(Shop)

@@ -1,10 +1,10 @@
 from django.conf import settings
-from django.db.models import Avg, Count, Sum
+from django.db.models import Avg, Count, Sum, OuterRef, Subquery
 from django.shortcuts import get_object_or_404
 from django_filters.views import FilterView
 
 from main.filters import ProductFilter
-from main.models import Category, Manufacturer, Product, Shop
+from main.models import Category, ColorProductShop, Manufacturer, Product, Shop
 from shopping_cart.models import ShoppingCart
 
 paginate_by = getattr(settings, "PAGINATE_BY", 10)
@@ -23,7 +23,7 @@ class BaseObjectListViewMixin(FilterView):
             Product.objects.filter(
                 is_active=True,
                 # отдает только товары, которые есть в магазинах
-                colourproduct__colourproductshop__quantity__gte=0,
+                colorproduct__colorproductshop__quantity__gt=0,
             )
             .select_related(
                 "manufacturer",
@@ -32,12 +32,15 @@ class BaseObjectListViewMixin(FilterView):
             .annotate(
                 # Добавляем количество магазинов, где есть товар
                 num_shop=Count(
-                    "colourproduct__colourproductshop__shop", distinct=True
+                    "colorproduct__colorproductshop__shop", distinct=True
                 ),
                 # Добавляем количество доступное количество товаров
-                num_products=Sum(
-                    "colourproduct__colourproductshop__quantity",
-                    distinct=True
+                num_products=Subquery(
+                    ColorProductShop.objects.filter(
+                        colorproduct__product=OuterRef('pk')
+                    ).values('colorproduct__product')
+                    .annotate(total=Sum('quantity'))
+                    .values('total')
                 ),
                 rating=Avg("reviews__rating"),
             )

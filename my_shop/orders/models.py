@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from main.models import Shop, Product, Colour
+from main.models import Shop, Product, Color
 
 User = get_user_model()
 
@@ -79,7 +79,7 @@ class OrderProduct(models.Model):
         blank=True,
     )
     colour = models.ForeignKey(
-        to=Colour,
+        to=Color,
         verbose_name="Цвет",
         on_delete=models.SET_DEFAULT,
         default=None,

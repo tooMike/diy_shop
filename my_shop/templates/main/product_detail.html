@@ -41,12 +41,12 @@
                     <p><strong>Страна:</strong> {{ product.manufacturer.country }}</p>
                     <form id="colorFilterForm" method="GET">
                         <p><strong>Цвета:</strong></p>
-                        {% for color in product_colour %}
-                            <label class="color-button {% if color.id|stringformat:"s" in selected_colors %}selected{% endif %}">
-                                <input type="checkbox" name="color" value="{{ color.id }}" onchange="submitForm()"
-                                    {% if color.id|stringformat:"s" in selected_colors %}checked{% endif %}
+                        {% for item in shops_data %}
+                            <label class="color-button {% if item.color.id|stringformat:"s" in selected_colors %}selected{% endif %}">
+                                <input type="checkbox" name="color" value="{{ item.color.id }}" onchange="submitForm()"
+                                    {% if item.color.id|stringformat:"s" in selected_colors %}checked{% endif %}
                                     style="display: none;">
-                                {{ color }}
+                                {{ item.color }}
                             </label>
                         {% endfor %}
                     </form>
@@ -85,9 +85,9 @@
                             <strong>Доступно в магазинах:</strong>
                             <ul>
                             {% for shop_data in shops_data %}
-                                {% if selected_colors  %}
-                                    {% if shop_data.colour.colour.id|stringformat:"s" in selected_colors %}
-                                        <li>{{ shop_data.colour }}
+                                {% if selected_colors %}
+                                    {% if shop_data.color.id|stringformat:"s" in selected_colors %}
+                                        <li>{{ shop_data.color }}
                                             <ul>
                                                 {% for item in shop_data.items %}
                                                     <li>{{ item.shop }} – {{ item.quantity }} шт</li>
@@ -97,7 +97,7 @@
                                         </li>
                                     {% endif %}
                                 {% else %}
-                                    <li>{{ shop_data.colour }}
+                                    <li>{{ shop_data.color }}
                                         <ul>
                                             {% for item in shop_data.items %}
                                                 <li>{{ item.shop }} – {{ item.quantity }} шт</li>
