@@ -11,7 +11,7 @@ class ProductFilter(django_filters.FilterSet):
         field_name="actual_price", lookup_expr="lte"
     )
     product_name = django_filters.CharFilter(field_name="name")
-    shop_id = django_filters.NumberFilter(field_name="shop")
+    # shop_id = django_filters.NumberFilter(field_name="colourproduct__colourproductshop__shop_id")
     category = django_filters.CharFilter(field_name="category__slug")
     manufacturer = django_filters.CharFilter(field_name="manufacturer__slug")
 
@@ -21,7 +21,7 @@ class ProductFilter(django_filters.FilterSet):
             "min_price",
             "max_price",
             "product_name",
-            "shop_id",
+            # "colourproduct__colourproductshop__shop_id",
             "category",
             "manufacturer",
         ]

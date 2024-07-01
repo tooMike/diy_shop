@@ -14,9 +14,8 @@ triples = [
     "main:Colour:data/colours.csv",
     "main:Shop:data/shops.csv",
     "main:Product:data/products.csv",
-    "main:ShopProduct:data/shopproduct.csv",
     "main:ColourProduct:data/colourproduct.csv",
-    "main:ShopProductColourProduct:data/shopproductcolourproduct.csv",
+    "main:ColourProductShop:data/colourproductshop.csv",
     "users:MyUser:data/users.csv",
     "main:Review:data/review.csv",
 ]

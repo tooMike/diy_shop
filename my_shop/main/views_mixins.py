@@ -20,16 +20,24 @@ class BaseObjectListViewMixin(FilterView):
     def get_queryset(self):
         """Получаем все товары"""
         queryset = (
-            Product.objects.filter(is_active=True)
+            Product.objects.filter(
+                is_active=True,
+                # отдает только товары, которые есть в магазинах
+                colourproduct__colourproductshop__quantity__gte=0,
+            )
             .select_related(
                 "manufacturer",
                 "category",
             )
             .annotate(
-                num_shop=Count("shop", distinct=True),
+                # Добавляем количество магазинов, где есть товар
+                num_shop=Count(
+                    "colourproduct__colourproductshop__shop", distinct=True
+                ),
+                # Добавляем количество доступное количество товаров
                 num_products=Sum(
-                    "shopproduct__shopproductcolourproduct__quantity",
-                    distinct=True,
+                    "colourproduct__colourproductshop__quantity",
+                    distinct=True
                 ),
                 rating=Avg("reviews__rating"),
             )

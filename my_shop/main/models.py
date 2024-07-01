@@ -11,6 +11,8 @@ User = get_user_model()
 
 
 class Shop(models.Model):
+    """Модель магазина."""
+
     name = models.CharField(max_length=150, verbose_name="Название магазина")
     address = models.TextField(max_length=300, verbose_name="Адрес магазина")
 
@@ -24,6 +26,8 @@ class Shop(models.Model):
 
 
 class Category(models.Model):
+    """Модель категория товаров."""
+
     name = models.CharField(max_length=50, verbose_name="Название категории")
     description = models.TextField(
         max_length=450, verbose_name="Описание категории"
@@ -41,6 +45,8 @@ class Category(models.Model):
 
 
 class Colour(models.Model):
+    """Модель цвета товара."""
+
     name = models.CharField(max_length=30, verbose_name="Название цвета")
 
     class Meta:
@@ -52,6 +58,8 @@ class Colour(models.Model):
 
 
 class Country(models.Model):
+    """Модель страны."""
+
     name = models.CharField(max_length=50, verbose_name="Название страны")
 
     class Meta:
@@ -64,6 +72,8 @@ class Country(models.Model):
 
 
 class Manufacturer(models.Model):
+    """Модель производителя."""
+
     name = models.CharField(
         max_length=50, verbose_name="Название производителя"
     )
@@ -83,6 +93,8 @@ class Manufacturer(models.Model):
 
 
 class Product(models.Model):
+    """Модель товара."""
+
     name = models.CharField(max_length=50, verbose_name="Название товара")
     description = models.TextField(
         max_length=400, verbose_name="Описание товара"
@@ -109,9 +121,6 @@ class Product(models.Model):
     )
     manufacturer = models.ForeignKey(
         Manufacturer, verbose_name="Производитель", on_delete=models.CASCADE
-    )
-    shop = models.ManyToManyField(
-        Shop, through="ShopProduct", verbose_name="Магазин", blank=True
     )
     colour = models.ManyToManyField(
         Colour,
@@ -150,20 +159,50 @@ class Product(models.Model):
         super().save(*args, **kwargs)
 
 
-class SerialNumber(models.Model):
-    serial_number = models.CharField(
-        max_length=50, verbose_name="Серийный номер"
+class ColourProduct(models.Model):
+    """Модель для связи товаров и их цветов."""
+
+    colour = models.ForeignKey(
+        Colour, verbose_name="Цвет", on_delete=models.CASCADE
     )
     product = models.ForeignKey(
         Product, verbose_name="Товар", on_delete=models.CASCADE
     )
 
     class Meta:
-        verbose_name = "серийный номер"
-        verbose_name_plural = "Серийные номера"
+        verbose_name = "цвет товара"
+        verbose_name_plural = "Цвета товара"
+        default_related_name = "colourproduct"
+
+    def __str__(self):
+        return self.colour.name
+
+
+class ColourProductShop(models.Model):
+    """
+    Модель для связи товаров определенных цветов
+    с их наличиев в магазинах.
+    """
+
+    colourproduct = models.ForeignKey(
+        ColourProduct, verbose_name="Цвет товара", on_delete=models.CASCADE
+    )
+    shop = models.ForeignKey(
+        Shop,
+        verbose_name="Магазин",
+        on_delete=models.CASCADE
+    )
+    quantity = models.IntegerField(verbose_name="Количество")
+
+    class Meta:
+        verbose_name = "товар в магазине"
+        verbose_name_plural = "Товары в магазине"
+        default_related_name = "colourproductshop"
 
 
 class Review(models.Model):
+    """Модель отзыва на товар."""
+
     text = models.TextField(max_length=1000, verbose_name="Текст отзыва")
     photo = models.FileField("Фото", blank=True, upload_to="photo", null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -182,45 +221,3 @@ class Review(models.Model):
         verbose_name_plural = "Отзывы"
         default_related_name = "reviews"
         ordering = ("-created_at",)
-
-
-class ShopProduct(models.Model):
-    shop = models.ForeignKey(
-        Shop, verbose_name="Магазин", on_delete=models.CASCADE
-    )
-    product = models.ForeignKey(
-        Product, verbose_name="Товар", on_delete=models.CASCADE
-    )
-
-    class Meta:
-        default_related_name = "shopproduct"
-
-
-class ColourProduct(models.Model):
-    colour = models.ForeignKey(
-        Colour, verbose_name="Цвета", on_delete=models.CASCADE
-    )
-    product = models.ForeignKey(
-        Product, verbose_name="Товар", on_delete=models.CASCADE
-    )
-
-    class Meta:
-        verbose_name = "цвет товара"
-        verbose_name_plural = "Цвета товара"
-        default_related_name = "colourproduct"
-
-    def __str__(self):
-        return self.colour.name
-
-
-class ShopProductColourProduct(models.Model):
-    shopproduct = models.ForeignKey(
-        ShopProduct, verbose_name="Товар в магазине", on_delete=models.CASCADE
-    )
-    colourproduct = models.ForeignKey(
-        ColourProduct, verbose_name="Цвета товара", on_delete=models.CASCADE
-    )
-    quantity = models.IntegerField(verbose_name="Количество")
-
-    class Meta:
-        default_related_name = "shopproductcolourproduct"

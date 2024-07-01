@@ -39,6 +39,33 @@
                     <a href="{% url "main:category" product.category.slug %}" class="badge bg-secondary">{{ product.category }}</a>
                     <p><strong>Производитель:</strong> <a href="{% url "main:manufacturer" product.manufacturer.slug %}">{{ product.manufacturer }}</a></p>
                     <p><strong>Страна:</strong> {{ product.manufacturer.country }}</p>
+                    <form id="colorFilterForm" method="GET">
+                        <p><strong>Цвета:</strong></p>
+                        {% for color in product_colour %}
+                            <label class="color-button {% if color.id|stringformat:"s" in selected_colors %}selected{% endif %}">
+                                <input type="checkbox" name="color" value="{{ color.id }}" onchange="submitForm()"
+                                    {% if color.id|stringformat:"s" in selected_colors %}checked{% endif %}
+                                    style="display: none;">
+                                {{ color }}
+                            </label>
+                        {% endfor %}
+                    </form>
+
+                    <style>
+                        .color-button {
+                            padding: 10px;
+                            margin: 5px;
+                            background-color: #f0f0f0;
+                            border: 1px solid #dcdcdc;
+                            display: inline-block;
+                            cursor: pointer;
+                        }
+                        .color-button.selected {
+                            background-color: #007BFF;
+                            color: white;
+                        }
+                    </style>
+
                     <div class="list-group list-group-flush">
                         <div class="list-group-item">
                             <strong>Цена:</strong> 
@@ -58,13 +85,26 @@
                             <strong>Доступно в магазинах:</strong>
                             <ul>
                             {% for shop_data in shops_data %}
-                                <li>{{ shop_data.shop }} ({{ shop_data.shop.address }})
-                                    <ul>
-                                        {% for item in shop_data.items %}
-                                            <li>Цвет: {{ item.colour }}. В наличии: {{ item.quantity }} шт</li>
-                                        {% endfor %}
-                                    </ul>
-                                </li>
+                                {% if selected_colors  %}
+                                    {% if shop_data.colour.colour.id|stringformat:"s" in selected_colors %}
+                                        <li>{{ shop_data.colour }}
+                                            <ul>
+                                                {% for item in shop_data.items %}
+                                                    <li>{{ item.shop }} – {{ item.quantity }} шт</li>
+                                                {% endfor %}
+                                                
+                                            </ul>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li>{{ shop_data.colour }}
+                                        <ul>
+                                            {% for item in shop_data.items %}
+                                                <li>{{ item.shop }} – {{ item.quantity }} шт</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </li>
+                                {% endif %}
                             {% endfor %}
                             </ul>
                         </div>
@@ -139,4 +179,13 @@
     </div>
     {% endfor %}
 </div>
+
+<script>
+    function submitForm() {
+        document.getElementById('colorFilterForm').submit();
+    }
+</script>
+
 {% endblock %}
+
+

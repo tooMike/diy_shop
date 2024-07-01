@@ -62,9 +62,9 @@ class ProductViewSet(RetrieveListViewSet):
     """Представление для получения товаров."""
 
     queryset = Product.objects.filter(is_active=True).annotate(
-        num_shop=Count("shop", distinct=True),
+        # num_shop=Count("shop", distinct=True),
         num_products=Sum(
-            "shopproduct__shopproductcolourproduct__quantity", distinct=True
+            "colourproduct__colourproductshop__quantity", distinct=True
         ),
         rating=Avg("reviews__rating"),
     )

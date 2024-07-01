@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from main.models import Shop, Product
+from main.models import Shop, Product, Colour
 
 User = get_user_model()
 
@@ -31,9 +31,7 @@ class Order(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True, verbose_name="Дата создания заказа"
     )
-    phone = models.CharField(
-        verbose_name="Номер телефона", max_length=20
-    )
+    phone = models.CharField(verbose_name="Номер телефона", max_length=20)
     requires_delivery = models.BooleanField(
         default=False, verbose_name="Требуется доставка"
     )
@@ -75,6 +73,14 @@ class OrderProduct(models.Model):
     product = models.ForeignKey(
         to=Product,
         verbose_name="Товар",
+        on_delete=models.SET_DEFAULT,
+        default=None,
+        null=True,
+        blank=True,
+    )
+    colour = models.ForeignKey(
+        to=Colour,
+        verbose_name="Цвет",
         on_delete=models.SET_DEFAULT,
         default=None,
         null=True,
