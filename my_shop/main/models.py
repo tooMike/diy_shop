@@ -215,7 +215,7 @@ class ColorProductShop(models.Model):
         verbose_name = "товар в магазине"
         verbose_name_plural = "Товары в магазине"
         default_related_name = "colorproductshop"
-        unique_together = ('colorproduct', 'shop')
+        unique_together = ("colorproduct", "shop")
 
 
 class Review(models.Model):

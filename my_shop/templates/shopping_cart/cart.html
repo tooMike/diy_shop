@@ -26,6 +26,7 @@
                 <thead>
                     <tr>
                         <th>Товар</th>
+                        <th>Цвет</th>
                         <th>Количество</th>
                         <th>Цена за единицу</th>
                         <th>Цена со скидкой</th>
@@ -38,10 +39,16 @@
                     {% for cart in carts %}
                         <tr>
                             <td><a href="{% url "main:product_detail" cart.product.id %}">{{ cart.product.name }}</a></td>
+                            <td>{{ cart.colorproduct }}</td>
                             <td>
-                                <a href="{% url 'cart:cart_change' cart.product.id %}" class="btn btn-sm btn-compact btn-outline-secondary">-</a>
+                                <a href="{% url 'cart:cart_change' cart.product.id cart.colorproduct.id %}" class="btn btn-sm btn-compact btn-outline-secondary">-</a>
                                 {{ cart.quantity }}
-                                <a href="{% url 'cart:cart_add' cart.product.id %}" class="btn btn-sm btn-compact btn-outline-secondary">+</a>
+                                <form action="{% url 'cart:cart_add' %}" method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="product_id" value="{{ cart.product.id }}">
+                                    <input type="hidden" name="colorproduct_id" value="{{ cart.colorproduct.id }}">
+                                    <button type="submit" class="btn btn-sm btn-compact btn-outline-secondary">+</button>
+                                </form>
                             </td>
                             <td>{{ cart.product.price }}</td>
                             <td>{{ cart.product.actual_price }}</td>

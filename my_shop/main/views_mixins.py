@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db.models import Avg, Count, Sum, OuterRef, Subquery
+from django.db.models import Avg, Count, OuterRef, Subquery, Sum
 from django.shortcuts import get_object_or_404
 from django_filters.views import FilterView
 
@@ -37,10 +37,11 @@ class BaseObjectListViewMixin(FilterView):
                 # Добавляем количество доступное количество товаров
                 num_products=Subquery(
                     ColorProductShop.objects.filter(
-                        colorproduct__product=OuterRef('pk')
-                    ).values('colorproduct__product')
-                    .annotate(total=Sum('quantity'))
-                    .values('total')
+                        colorproduct__product=OuterRef("pk")
+                    )
+                    .values("colorproduct__product")
+                    .annotate(total=Sum("quantity"))
+                    .values("total")
                 ),
                 rating=Avg("reviews__rating"),
             )
@@ -65,30 +66,30 @@ class BaseObjectListViewMixin(FilterView):
         # Передаем в контекст все shop_id из url (для фильтра по магазинам)
         context["selected_shop_ids"] = self.request.GET.getlist("shop_id")
 
-        # Добавляем в контекст словарь с {id_товара: количество_в_корзине, ...}
-        # текущего пользователя для проверки в шаблоне,
-        # есть ли конкретный товар в корзине пользователя
-        # и отображения количества товара в корзине
-        users_shopping_carts = ShoppingCart.objects.all().select_related(
-            "product"
-        )
-        # Для авторизированного пользователя фильтруем по user
-        if self.request.user.is_authenticated:
-            users_shopping_carts = users_shopping_carts.filter(
-                user=self.request.user
-            )
-        # Для анонимного пользователя фильтруем по session_key
-        else:
-            users_shopping_carts = users_shopping_carts.filter(
-                session_key=self.request.session.session_key
-            )
-        # Формируем словарь {id_товара: количество_в_корзине, ...}
-        products_in_user_shopping_carts = {}
-        for cart in users_shopping_carts:
-            products_in_user_shopping_carts[cart.product.id] = cart.quantity
-        context["products_in_user_shopping_carts"] = (
-            products_in_user_shopping_carts
-        )
+        # # Добавляем в контекст словарь с {id_товара: количество_в_корзине, ...}
+        # # текущего пользователя для проверки в шаблоне,
+        # # есть ли конкретный товар в корзине пользователя
+        # # и отображения количества товара в корзине
+        # users_shopping_carts = ShoppingCart.objects.all().select_related(
+        #     "product"
+        # )
+        # # Для авторизированного пользователя фильтруем по user
+        # if self.request.user.is_authenticated:
+        #     users_shopping_carts = users_shopping_carts.filter(
+        #         user=self.request.user
+        #     )
+        # # Для анонимного пользователя фильтруем по session_key
+        # else:
+        #     users_shopping_carts = users_shopping_carts.filter(
+        #         session_key=self.request.session.session_key
+        #     )
+        # # Формируем словарь {id_товара: количество_в_корзине, ...}
+        # products_in_user_shopping_carts = {}
+        # for cart in users_shopping_carts:
+        #     products_in_user_shopping_carts[cart.product.id] = cart.quantity
+        # context["products_in_user_shopping_carts"] = (
+        #     products_in_user_shopping_carts
+        # )
         return context
 
 

@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from main.models import Product
+from main.models import Product, ColorProduct
 
 User = get_user_model()
 
@@ -35,6 +35,9 @@ class ShoppingCart(models.Model):
     product = models.ForeignKey(
         Product, verbose_name="Товар", on_delete=models.CASCADE
     )
+    colorproduct = models.ForeignKey(
+        ColorProduct, verbose_name="Товар цвета", on_delete=models.CASCADE
+    )
     quantity = models.PositiveSmallIntegerField(verbose_name="Количество")
     # Добавляем поле чтобы session_key для неаторизованных пользователей
     session_key = models.CharField(max_length=32, null=True, blank=True)
@@ -48,6 +51,7 @@ class ShoppingCart(models.Model):
         verbose_name = "корзина"
         verbose_name_plural = "Корзины"
         default_related_name = "shoppingcart"
+        unique_together = ("user", "colorproduct")
 
     def __str__(self) -> str:
         return f"Корзина {self.user.username} | Товар {self.product}"

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load rating_tags %}
 {% load django_bootstrap5 %}
+{% load cart_tags %}
 
 {% block title %}
   {{ product.name }}
@@ -18,6 +19,7 @@
 {% endblock breadcrumb %}
 
 {% block content %}
+
 <div class="container mt-4">
     <div class="card">
         <div class="row g-0">
@@ -40,13 +42,13 @@
                     <p><strong>Производитель:</strong> <a href="{% url "main:manufacturer" product.manufacturer.slug %}">{{ product.manufacturer }}</a></p>
                     <p><strong>Страна:</strong> {{ product.manufacturer.country }}</p>
                     <form id="colorFilterForm" method="GET">
-                        <p><strong>Цвета:</strong></p>
+                        <p><strong>Выберите цвет:</strong></p>
                         {% for item in shops_data %}
-                            <label class="color-button {% if item.color.id|stringformat:"s" in selected_colors %}selected{% endif %}">
-                                <input type="checkbox" name="color" value="{{ item.color.id }}" onchange="submitForm()"
-                                    {% if item.color.id|stringformat:"s" in selected_colors %}checked{% endif %}
+                            <label class="color-button {% if item.colorproduct.id|stringformat:"s" in selected_colorproduct %}selected{% endif %}">
+                                <input type="checkbox" name="color" value="{{ item.colorproduct.id }}" onchange="submitForm()"
+                                    {% if item.colorproduct.id|stringformat:"s" in selected_colorproduct %}checked{% endif %}
                                     style="display: none;">
-                                {{ item.color }}
+                                {{ item.colorproduct }}
                             </label>
                         {% endfor %}
                     </form>
@@ -78,16 +80,36 @@
                             
                         </div>
                         <div class="list-group-item">
-                            <a class="btn btn-outline-dark mt-auto" href="{% url "cart:cart_add" product.id %}">Добавить в корзину</a>
+
+                            
+                            {% products_in_user_shopping_carts request as products_in_carts %}
+
+                            {% if product.id  in products_in_carts %}
+                                <p>Товар добавлен в корзину</p>
+                            {% endif %}
+
+                            <form action="{% url 'cart:cart_add' %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="product_id" value="{{ product.id }}">
+                                <input type="hidden" id="selected_colorproduct" name="colorproduct_id" value="">
+                                <div>
+                                    {% if product.id  in products_in_carts %}
+                                        <button type="submit" class="btn btn-outline-dark mt-auto" id="addToCartButton" disabled>Добавить еще 1 товар в корзину</button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-outline-dark mt-auto" id="addToCartButton" disabled>Добавить в корзину</button>
+                                    {% endif %}
+                                </div>
+                                    
+                            </form>
                         </div>
                         
                         <div class="list-group-item">
                             <strong>Доступно в магазинах:</strong>
                             <ul>
                             {% for shop_data in shops_data %}
-                                {% if selected_colors %}
-                                    {% if shop_data.color.id|stringformat:"s" in selected_colors %}
-                                        <li>{{ shop_data.color }}
+                                {% if selected_colorproduct %}
+                                    {% if shop_data.colorproduct.id|stringformat:"s" in selected_colorproduct %}
+                                        <li>{{ shop_data.colorproduct }}
                                             <ul>
                                                 {% for item in shop_data.items %}
                                                     <li>{{ item.shop }} – {{ item.quantity }} шт</li>
@@ -97,7 +119,7 @@
                                         </li>
                                     {% endif %}
                                 {% else %}
-                                    <li>{{ shop_data.color }}
+                                    <li>{{ shop_data.colorproduct }}
                                         <ul>
                                             {% for item in shop_data.items %}
                                                 <li>{{ item.shop }} – {{ item.quantity }} шт</li>
@@ -185,6 +207,45 @@
         document.getElementById('colorFilterForm').submit();
     }
 </script>
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkboxes = document.querySelectorAll('input[type="checkbox"][name="color"]');
+        const addToCartButton = document.getElementById('addToCartButton');
+        const selectedColorInput = document.getElementById('selected_colorproduct');
+    
+        function updateButtonState() {
+            let anyChecked = false;
+            let selectedColors = [];
+    
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    anyChecked = true;
+                    selectedColors.push(checkbox.value);
+                }
+            });
+    
+            addToCartButton.disabled = !anyChecked;
+            if (anyChecked) {
+                addToCartButton.classList.remove('disabled');
+            } else {
+                addToCartButton.classList.add('disabled');
+            }
+    
+            // Обновляем значение скрытого поля с выбранными цветами
+            selectedColorInput.value = selectedColors.join(',');
+        }
+    
+        checkboxes.forEach(checkbox => checkbox.addEventListener('change', updateButtonState));
+    
+        // Инициализация состояния при загрузке страницы
+        updateButtonState();
+    });
+</script>
+        
+    
 
 {% endblock %}
 
