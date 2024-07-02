@@ -67,11 +67,18 @@
                     </tr>
                 </tfoot>
             </table>
-            
+
+
+
+            {% if request.user.is_authenticated %}
             <div class="text-end">
                 <a href="{% url "order:create_order" %}" class="btn btn-primary">Оформить заказ</a>
             </div>
-        {% else %}
+            {% else %}
+                <h4> Для оформления заказа, пожалуйста, зарегистрируйтесь:</h4>
+                <a href="{% url 'users:email_verification' %}" class="btn btn-primary">Зарегистрироваться</a>
+            {% endif %}
+            {% else %}
             <p>Ваша корзина пуста.</p>
         {% endif %}
     </div>
