@@ -1,6 +1,6 @@
 {% load static %}
 {% load rating_tags %}
-{% load cart_tags %}
+
 
 
 <div class="col mb-5">
@@ -51,7 +51,6 @@
                     </div>
                 {% endif %}
                 <!-- Product price-->
-                {% products_in_user_shopping_carts request as products_in_carts %}
                 {% if product.id in products_in_carts %}
                 <div class="text-center">
                     <p>Товар уже в корзине</p>

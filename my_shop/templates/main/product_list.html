@@ -1,6 +1,7 @@
 {% extends "main/index.html" %}
 {% load django_bootstrap5 %}
 {% load static %}
+{% load cart_tags %}
 
 <!-- Хлебные крошки -->
 {% block breadcrumb %}
@@ -78,6 +79,9 @@
             <!-- Карточки товаров -->
             <div class="col-md-9">
                 <div class="row gx-4 gx-lg-5 row-cols-1 row-cols-md-2 row-cols-xl-3 justify-content-center">
+                    <!-- Загружаем информацию о товарах в корзине пользователя -->
+                    {% products_in_user_shopping_carts request as products_in_carts %}
+
                     {% for product in product_list %}
                         {% include "includes/product_card.html" %}
                     {% endfor %}

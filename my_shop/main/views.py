@@ -18,7 +18,7 @@ def product_detail_view(request, product_id, review_id=None):
     queryset = Product.objects.annotate(
         rating=Avg("reviews__rating"),
         reviews_count=Count("reviews"),
-    )
+    ).select_related("category", "manufacturer", "manufacturer__country")
     product = get_object_or_404(queryset, id=product_id, is_active=True)
 
     # Добавляем в контекст данные о товаре

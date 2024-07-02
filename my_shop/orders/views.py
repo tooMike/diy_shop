@@ -9,7 +9,7 @@ from shopping_cart.models import ShoppingCart
 def create_order(request):
     """Создание заказа."""
     context = {}
-    if request.method == 'POST':
+    if request.method == "POST":
         form = CreateOrderForm(data=request.POST)
         if form.is_valid():
             try:
@@ -22,8 +22,8 @@ def create_order(request):
         if request.user.is_authenticated:
             carts = ShoppingCart.objects.filter(user=request.user)
             initial = {
-                'first_name': request.user.first_name,
-                'second_name': request.user.second_name,
+                "first_name": request.user.first_name,
+                "last_name": request.user.last_name,
             }
         else:
             carts = ShoppingCart.objects.filter(
