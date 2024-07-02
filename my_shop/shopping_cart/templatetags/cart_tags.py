@@ -31,7 +31,7 @@ def products_in_user_shopping_carts(request):
     и отображения количества товара в корзине
     """
     users_shopping_carts = ShoppingCart.objects.all().select_related(
-        "product"
+        "colorproduct"
     )
     # Для авторизированного пользователя фильтруем по user
     if request.user.is_authenticated:

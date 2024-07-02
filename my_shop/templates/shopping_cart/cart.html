@@ -38,20 +38,19 @@
                 <tbody>
                     {% for cart in carts %}
                         <tr>
-                            <td><a href="{% url "main:product_detail" cart.product.id %}">{{ cart.product.name }}</a></td>
+                            <td><a href="{% url "main:product_detail" cart.colorproduct.product.id %}">{{ cart.colorproduct.product.name }}</a></td>
                             <td>{{ cart.colorproduct }}</td>
                             <td>
-                                <a href="{% url 'cart:cart_change' cart.product.id cart.colorproduct.id %}" class="btn btn-sm btn-compact btn-outline-secondary">-</a>
+                                <a href="{% url 'cart:cart_change' cart.colorproduct.id %}" class="btn btn-sm btn-compact btn-outline-secondary">-</a>
                                 {{ cart.quantity }}
                                 <form action="{% url 'cart:cart_add' %}" method="post" style="display: inline;">
                                     {% csrf_token %}
-                                    <input type="hidden" name="product_id" value="{{ cart.product.id }}">
                                     <input type="hidden" name="colorproduct_id" value="{{ cart.colorproduct.id }}">
                                     <button type="submit" class="btn btn-sm btn-compact btn-outline-secondary">+</button>
                                 </form>
                             </td>
-                            <td>{{ cart.product.price }}</td>
-                            <td>{{ cart.product.actual_price }}</td>
+                            <td>{{ cart.colorproduct.product.price }}</td>
+                            <td>{{ cart.colorproduct.product.actual_price }}</td>
                             <td>{{ cart.product_price }}</td>
                             <td>{{ cart|total_saving }}</td>
                             <td>
@@ -62,7 +61,7 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="4">Общая сумма:</td>
+                        <td colspan="5">Общая сумма:</td>
                         <td>{{ carts.total_price }}</td>
                         <td></td>
                     </tr>

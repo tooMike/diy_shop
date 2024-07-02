@@ -1,6 +1,6 @@
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 
-from main.models import ColorProduct, Product
+from main.models import ColorProduct
 from shopping_cart.forms import CartAddForm
 from shopping_cart.models import ShoppingCart
 
@@ -30,11 +30,8 @@ def cart_add(request):
         request.POST or None,
     )
     if form.is_valid():
-        # product = Product.objects.get(id=product_id)
-        product_id = form.cleaned_data["product_id"]
         colorproduct_id = form.cleaned_data["colorproduct_id"]
-        colorproduct = ColorProduct.objects.get(id=colorproduct_id)
-        product = Product.objects.get(id=product_id)
+        colorproduct = get_object_or_404(ColorProduct, id=colorproduct_id)
 
         if request.user.is_authenticated:
             cart = ShoppingCart.objects.filter(
@@ -61,32 +58,32 @@ def cart_add(request):
                 ShoppingCart.objects.create(
                     user=request.user,
                     colorproduct=colorproduct,
+                    product=colorproduct.product,
                     quantity=1,
                 )
             else:
                 ShoppingCart.objects.create(
                     session_key=request.session.session_key,
-                    product=product,
                     colorproduct=colorproduct,
+                    product=colorproduct.product,
                     quantity=1,
                 )
     return redirect(request.META["HTTP_REFERER"])
 
 
-def cart_change(request, product_id, colorproduct_id):
+def cart_change(request, colorproduct_id):
     """Изменение корзины."""
 
-    product = Product.objects.get(id=product_id)
-    colorproduct = ColorProduct.objects.get(id=colorproduct_id)
+    colorproduct = get_object_or_404(ColorProduct, id=colorproduct_id)
 
     if request.user.is_authenticated:
         cart = ShoppingCart.objects.filter(
-            user=request.user, colorproduct_id=colorproduct_id
+            user=request.user, colorproduct=colorproduct
         )
     else:
         cart = ShoppingCart.objects.filter(
             session_key=request.session.session_key,
-            colorproduct_id=colorproduct_id,
+            colorproduct=colorproduct,
         )
 
     if cart.exists():
@@ -106,6 +103,6 @@ def cart_change(request, product_id, colorproduct_id):
 def cart_remove(request, cart_id):
     """Удаление позиций из корзины."""
 
-    cart = ShoppingCart.objects.get(id=cart_id)
+    cart = get_object_or_404(ShoppingCart, id=cart_id)
     cart.delete()
     return redirect(request.META["HTTP_REFERER"])

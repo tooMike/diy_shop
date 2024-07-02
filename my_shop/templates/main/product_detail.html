@@ -26,27 +26,29 @@
             <div class="col-md-4">
                 <div class="position-relative">
                     {% if product.sale %}
-                        <div class="badge bg-danger text-white position-absolute" style="top: 0.5rem; right: 0.5rem; z-index: 1000; border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 1rem; font-weight: bold;">Скидка {{ product.sale }}%</div>
+                        <div class="badge bg-danger text-white position-absolute" style="top: 0.5rem; right: 0.5rem; z-index: 1000; border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 1rem; font-weight: bold;">
+                          Скидка {{ product.sale }}%
+                        </div>
                     {% endif %}
-                    <a href="{% url "main:product_detail" product.id %}">
+                    <a href="{% url 'main:product_detail' product.id %}">
                         <img class="card-img-top" 
                             src="{% if product.image %}{{ product.image.url }}{% else %}https://dummyimage.com/450x300/dee2e6/6c757d.jpg{% endif %}"
-                            alt="{{ product.name }}">
-                    </a>
+                            alt="{{ product.name }}"></a>
+                    
                 </div>
             </div>            
             <div class="col-md-8">
                 <div class="card-body">
                     <h1 class="card-title">{{ product.name }}</h1>
-                    <a href="{% url "main:category" product.category.slug %}" class="badge bg-secondary">{{ product.category }}</a>
-                    <p><strong>Производитель:</strong> <a href="{% url "main:manufacturer" product.manufacturer.slug %}">{{ product.manufacturer }}</a></p>
+                    <a href="{% url 'main:category' product.category.slug %}" class="badge bg-secondary">{{ product.category }}</a>
+                    <p><strong>Производитель:</strong> <a href="{% url 'main:manufacturer' product.manufacturer.slug %}">{{ product.manufacturer }}</a></p>
                     <p><strong>Страна:</strong> {{ product.manufacturer.country }}</p>
                     <form id="colorFilterForm" method="GET">
                         <p><strong>Выберите цвет:</strong></p>
                         {% for item in shops_data %}
-                            <label class="color-button {% if item.colorproduct.id|stringformat:"s" in selected_colorproduct %}selected{% endif %}">
-                                <input type="checkbox" name="color" value="{{ item.colorproduct.id }}" onchange="submitForm()"
-                                    {% if item.colorproduct.id|stringformat:"s" in selected_colorproduct %}checked{% endif %}
+                            <label class="color-button {% if item.colorproduct.id|stringformat:'s' in selected_colorproduct %}selected{% endif %}">
+                                <input type="radio" name="color" value="{{ item.colorproduct.id }}" onchange="submitForm()"
+                                    {% if item.colorproduct.id|stringformat:'s' in selected_colorproduct %}checked{% endif %}
                                     style="display: none;">
                                 {{ item.colorproduct }}
                             </label>
@@ -62,7 +64,10 @@
                             display: inline-block;
                             cursor: pointer;
                         }
-                        .color-button.selected {
+                        .color-button input[type="radio"] {
+                            display: none;
+                        }
+                        .color-button.selected, .color-button:hover {
                             background-color: #007BFF;
                             color: white;
                         }
@@ -90,7 +95,6 @@
 
                             <form action="{% url 'cart:cart_add' %}" method="post">
                                 {% csrf_token %}
-                                <input type="hidden" name="product_id" value="{{ product.id }}">
                                 <input type="hidden" id="selected_colorproduct" name="colorproduct_id" value="">
                                 <div>
                                     {% if product.id  in products_in_carts %}
@@ -194,8 +198,8 @@
               <img src="{{ review.photo.url }}" class="img-thumbnail" alt="Фото отзыва">
             {% endif %}
             {% if request.user == review.author %}
-                <a href="{% url "main:edit_review" product.id review.id %}#review_form" class="btn btn-outline-primary btn-sm">Редактировать</a>
-                <a href="{% url "main:delete_review" review.id %}" class="btn btn-outline-danger btn-sm">Удалить</a>
+                <a href="{% url 'main:edit_review' product.id review.id %}#review_form" class="btn btn-outline-primary btn-sm">Редактировать</a>
+                <a href="{% url 'main:delete_review' review.id %}" class="btn btn-outline-danger btn-sm">Удалить</a>
             {% endif %}
         </div>
     </div>
@@ -212,38 +216,34 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const checkboxes = document.querySelectorAll('input[type="checkbox"][name="color"]');
+        const radioButtons = document.querySelectorAll('input[type="radio"][name="color"]');
         const addToCartButton = document.getElementById('addToCartButton');
         const selectedColorInput = document.getElementById('selected_colorproduct');
     
         function updateButtonState() {
-            let anyChecked = false;
-            let selectedColors = [];
-    
-            checkboxes.forEach(checkbox => {
-                if (checkbox.checked) {
-                    anyChecked = true;
-                    selectedColors.push(checkbox.value);
-                }
-            });
-    
-            addToCartButton.disabled = !anyChecked;
-            if (anyChecked) {
+            // Поиск выбранной радио-кнопки
+            const selectedRadio = Array.from(radioButtons).find(radio => radio.checked);
+            
+            // Установка значения скрытого поля в значение выбранной радио-кнопки
+            if (selectedRadio) {
+                selectedColorInput.value = selectedRadio.value;
+                addToCartButton.disabled = false; // Активировать кнопку, если выбрана радио-кнопка
                 addToCartButton.classList.remove('disabled');
             } else {
+                selectedColorInput.value = ''; // Очистка, если нет выбранной радио-кнопки
+                addToCartButton.disabled = true; // Деактивировать кнопку, если ничего не выбрано
                 addToCartButton.classList.add('disabled');
             }
-    
-            // Обновляем значение скрытого поля с выбранными цветами
-            selectedColorInput.value = selectedColors.join(',');
         }
     
-        checkboxes.forEach(checkbox => checkbox.addEventListener('change', updateButtonState));
+        // Вешаем обработчик изменений на каждую радио-кнопку
+        radioButtons.forEach(radio => radio.addEventListener('change', updateButtonState));
     
         // Инициализация состояния при загрузке страницы
         updateButtonState();
     });
-</script>
+    </script>
+    
         
     
 
