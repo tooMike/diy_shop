@@ -38,8 +38,8 @@
                 <tbody>
                     {% for cart in carts %}
                         <tr>
-                            <td><a href="{% url "main:product_detail" cart.colorproduct.product.id %}">{{ cart.colorproduct.product.name }}</a></td>
-                            <td>{{ cart.colorproduct }}</td>
+                            <td><a href="{% url "main:product_detail" cart.product.id %}">{{ cart.product.name }}</a></td>
+                            <td>{{ cart.colorproduct.name }}</td>
                             <td>
                                 <a href="{% url 'cart:cart_change' cart.colorproduct.id %}" class="btn btn-sm btn-compact btn-outline-secondary">-</a>
                                 {{ cart.quantity }}
@@ -49,8 +49,8 @@
                                     <button type="submit" class="btn btn-sm btn-compact btn-outline-secondary">+</button>
                                 </form>
                             </td>
-                            <td>{{ cart.colorproduct.product.price }}</td>
-                            <td>{{ cart.colorproduct.product.actual_price }}</td>
+                            <td>{{ cart.product.price }}</td>
+                            <td>{{ cart.product.actual_price }}</td>
                             <td>{{ cart.product_price }}</td>
                             <td>{{ cart|total_saving }}</td>
                             <td>
