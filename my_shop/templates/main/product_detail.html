@@ -106,9 +106,24 @@
                                     
                             </form>
                         </div>
+
                         
                         <div class="list-group-item">
-                            <strong>Доступно в магазинах:</strong>
+
+                            {% if storage_data %}
+                                <strong>Доступно в интернет-магазине:</strong>
+                                <ul>                                    
+                                    {% for item in storage_data %}
+                                        <li>{{ item }} – {{item.total}} шт</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <strong>Недоступно для заказа в интернет-магизине</strong>
+                            {% endif %}
+                        </div>
+
+                        <div class="list-group-item">
+                            <strong>Доступно в оффлайн магазинах:</strong>
                             <ul>
                             {% for shop_data in shops_data %}
                                 {% if selected_colorproduct %}
@@ -134,6 +149,7 @@
                             {% endfor %}
                             </ul>
                         </div>
+
                         <div class="list-group-item">
                             <strong>Рейтинг:</strong> 
                             {% if product.rating == 0 %}

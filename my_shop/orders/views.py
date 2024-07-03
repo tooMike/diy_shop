@@ -20,7 +20,9 @@ def create_order(request):
     }
     form = CreateOrderForm(data=request.POST or None, initial=initial)
     carts = ShoppingCart.objects.filter(user=request.user).select_related(
-        "product"
+        "product",
+        "colorproduct",
+        "colorproduct__color",
     )
     stores = Shop.objects.all()
     context = {
@@ -65,8 +67,6 @@ def create_order(request):
 
                         orderproduct = []
 
-                        # available_products = Color
-
                         for item in carts:
                             available_products = (
                                 ColorProductShop.objects.filter(
@@ -75,7 +75,8 @@ def create_order(request):
                             )
                             if available_products < item.quantity:
                                 raise ValidationError(
-                                    f"Недостаточное количество товаров в наличии\
+                                    f"Недостаточное количество товаров: \
+                                      {item.product}: {item.colorproduct}. \
                                       В наличии: {available_products}"
                                 )
                             orderproduct.append(
@@ -99,8 +100,9 @@ def create_order(request):
                         messages.success(request, "Заказ оформлен")
                         return redirect("main:index")
 
+            # Передаем сообщение об ошибке на страницу заказа
             except ValidationError as e:
-                messages.success(request, str(e))
+                messages.error(request, e.message)
                 return redirect("order:create_order")
 
     return render(

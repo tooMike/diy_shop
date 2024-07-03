@@ -1,9 +1,17 @@
+from collections import defaultdict
 from django.conf import settings
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 
 from main.forms import ReviewForm
-from main.models import Category, Manufacturer, Product, Review
+from main.models import (
+    Category,
+    ColorProduct,
+    ColorProductShop,
+    Manufacturer,
+    Product,
+    Review,
+)
 from main.views_mixins import BaseObjectListViewMixin, ObjectListViewMixin
 
 paginate_by = getattr(settings, "PAGINATE_BY", 10)
@@ -21,21 +29,58 @@ def product_detail_view(request, product_id, review_id=None):
     ).select_related("category", "manufacturer", "manufacturer__country")
     product = get_object_or_404(queryset, id=product_id, is_active=True)
 
-    # Добавляем в контекст данные о товаре
+    # Добавляем в контекст данные о товаре в оффлан магазинах
+    # shops_data = [
+    #     {"colorproduct": colorproduct, "items": items}
+    #     for colorproduct in product.colorproduct.select_related("color")
+    #     for items in [
+    #         [
+    #             # Исключаем из списка товары, которых нет в наличии,
+    #             # а также товары на складе интернет-магазина
+    #             {"shop": item.shop, "quantity": item.quantity}
+    #             for item in colorproduct.colorproductshop.filter(
+    #                 quantity__gt=0
+    #             ).select_related(
+    #                 "shop", "colorproduct"
+    #             ).exclude(
+    #                 shop__name__icontains="Склад"
+    #             ).order_by("shop")
+    #         ]
+    #     ]
+    #     if items  # Добавляем в shops_data только если есть items
+    # ]
+
+    # Добавляем в контекст данные о товаре в оффлан магазинах
+    grouped_data = defaultdict(list)
+    for colorproductshop in (
+        ColorProductShop.objects.filter(
+            colorproduct__product__id=product_id, quantity__gt=0
+        )
+        .exclude(shop__name__icontains="Склад")
+        .select_related("shop", "colorproduct", "colorproduct__color")
+    ):
+        grouped_data[colorproductshop.colorproduct].append(
+            {
+                "shop": colorproductshop.shop,
+                "quantity": colorproductshop.quantity,
+            }
+        )
+
     shops_data = [
-        {"colorproduct": colorproduct, "items": items}
-        for colorproduct in product.colorproduct.select_related("color")
-        for items in [
-            [
-                {"shop": item.shop, "quantity": item.quantity}
-                for item in colorproduct.colorproductshop.order_by(
-                    "shop"
-                ).select_related("shop")
-                if item.quantity > 0
-            ]
-        ]
-        if items  # Добавляем в shops_data только если есть items
+        {"colorproduct": color, "items": items}
+        for color, items in grouped_data.items()
     ]
+
+    # Добавляем в контекст данные о товаре в интернет магазине
+    storage_data = (
+        ColorProduct.objects.filter(
+            product=product,
+            colorproductshop__shop__name__icontains="Склад",
+            colorproductshop__quantity__gt=0,
+        )
+        .select_related("color")
+        .annotate(total=Sum("colorproductshop__quantity"))
+    )
 
     # Добавляем выбранные пользователем цвета
     selected_colorproduct = request.GET.getlist("color")
@@ -66,6 +111,7 @@ def product_detail_view(request, product_id, review_id=None):
     context = {
         "product": product,
         "shops_data": shops_data,
+        "storage_data": storage_data,
         "selected_colorproduct": selected_colorproduct,
         "form": form,
         "reviews": reviews,

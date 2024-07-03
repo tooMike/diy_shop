@@ -18,6 +18,7 @@
                 <thead>
                     <tr>
                         <th>Товар</th>
+                        <th>Цвет</th>
                         <th>Количество</th>
                         <th>Цена за единицу</th>
                         <th>Сумма</th>
@@ -27,6 +28,7 @@
                     {% for cart in carts %}
                         <tr>
                             <td><a href="{% url "main:product_detail" cart.product.id %}">{{ cart.product.name }}</a></td>
+                            <td>{{ cart.colorproduct }}</td>
                             <td>{{ cart.quantity }}</td>
                             <td>{{ cart.product.actual_price }}</td>
                             <td>{{ cart.product_price }}</td>
@@ -44,7 +46,7 @@
             {% if messages %}
                 <ul class="messages">
                     {% for message in messages %}
-                        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+                        <li{% if message.tags %} class="{{ message.tags }} alert alert-danger alert-dismissable fade show"{% endif %}>
                             {{ message }}
                         </li>
                     {% endfor %}
