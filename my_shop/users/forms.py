@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 
 from main.models import User
 from users.constants import CONFIRMATION_CODE_MAX_LENGTH
-from users.validators import email_validator
+from users.validators import email_validator, validate_phone_number
 
 
 class EmailVerificationForm(forms.Form):
@@ -31,10 +31,11 @@ class CustomUserCreationForm(UserCreationForm):
 
 class CustomUserUpdateForm(forms.ModelForm):
     email = forms.EmailField(label="Адрес электронной почты", disabled=True)
+    phone = forms.CharField(max_length=15, validators=(validate_phone_number,))
 
     class Meta:
         model = User
-        fields = ("username", "first_name", "last_name", "email")
+        fields = ("username", "first_name", "last_name", "phone", "email")
         widgets = {
             "username": forms.TextInput(attrs={"readonly": "readonly"}),
         }

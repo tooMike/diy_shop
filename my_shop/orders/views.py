@@ -115,9 +115,7 @@ def create_order(request):
                         # Обновляем наличие товара в выбранном магазину
                         product_quantity.quantity -= item.quantity
                         # Формируем список для bulk_update
-                        shop_quantity.append(
-                            product_quantity
-                        )
+                        shop_quantity.append(product_quantity)
 
                     # Обновляем наличие в магазинах для всех позиций в заказе
                     ColorProductShop.objects.bulk_update(
