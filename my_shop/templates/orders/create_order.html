@@ -46,9 +46,12 @@
             {% if messages %}
                 <ul class="messages">
                     {% for message in messages %}
-                        <li{% if message.tags %} class="{{ message.tags }} alert alert-danger alert-dismissable fade show"{% endif %}>
-                            {{ message }}
-                        </li>
+                        {% if message.tags == 'error' %}
+                            <li class="alert alert-danger alert-dismissable fade show">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </li>
+                        {% endif %}
                     {% endfor %}
                 </ul>
             {% endif %}
@@ -84,6 +87,7 @@
                         {% endif %}
                     </div>
                 </div>
+
                 <div class="mb-3">
                     <div>Способ доставки*:</div>
                     <div class="form-check">
@@ -153,10 +157,26 @@
         {% endif %}
     </div>
 </section>
+
 <script>
-function toggleDeliveryForm(isDelivery) {
-    document.getElementById('deliveryInfo').style.display = isDelivery ? 'block' : 'none';
-    document.getElementById('pickupInfo').style.display = !isDelivery ? 'block' : 'none';
-}
-</script>
+    function toggleDeliveryForm(isDelivery) {
+        var deliveryInfo = document.getElementById('deliveryInfo');
+        var pickupInfo = document.getElementById('pickupInfo');
+        var cityInput = document.getElementById('city');
+        var addressInput = document.getElementById('delivery_adress');
+    
+        deliveryInfo.style.display = isDelivery ? 'block' : 'none';
+        pickupInfo.style.display = !isDelivery ? 'block' : 'none';
+    
+        cityInput.required = isDelivery;
+        addressInput.required = isDelivery;
+    
+        if (!isDelivery) {
+            cityInput.value = '';
+            addressInput.value = '';
+        }
+    }
+    </script>
+    
+
 {% endblock content %}

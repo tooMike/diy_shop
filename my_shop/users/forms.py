@@ -31,7 +31,9 @@ class CustomUserCreationForm(UserCreationForm):
 
 class CustomUserUpdateForm(forms.ModelForm):
     email = forms.EmailField(label="Адрес электронной почты", disabled=True)
-    phone = forms.CharField(max_length=15, validators=(validate_phone_number,))
+    phone = forms.CharField(
+        max_length=15, validators=(validate_phone_number,), required=False
+    )
 
     class Meta:
         model = User

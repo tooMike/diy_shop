@@ -13,6 +13,10 @@ def email_validator(value):
 
 
 def validate_phone_number(value):
+    if len(value) < 9:
+        raise ValidationError(
+            "Номер телефона не может быть короче 9 цифр"
+        )
     phone_regex = re.compile(r"^\+?\d{1,14}[\s\(\)-]*$")
     if not phone_regex.match(value):
         raise ValidationError(

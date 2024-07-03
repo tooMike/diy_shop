@@ -1,12 +1,15 @@
 from django import forms
 
 from main.models import Shop
+from users.validators import validate_phone_number
 
 
 class CreateOrderForm(forms.Form):
     """Форма размещения заказа."""
 
-    phone = forms.CharField(max_length=10)
+    phone = forms.CharField(
+        max_length=15, validators=(validate_phone_number,)
+    )
     first_name = forms.CharField(max_length=50)
     last_name = forms.CharField(max_length=50)
     requires_delivery = forms.ChoiceField(
