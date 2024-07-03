@@ -25,11 +25,11 @@ def create_order(request):
         "colorproduct",
         "colorproduct__color",
     )
-    stores = Shop.objects.exclude(name__icontains="Склад")
+    shops = Shop.objects.exclude(name__icontains="Склад")
     context = {
         "carts": carts,
         "form": form,
-        "stores": stores,
+        "shops": shops,
     }
     if request.method == "POST" and form.is_valid():
         try:
