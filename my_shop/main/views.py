@@ -30,27 +30,6 @@ def product_detail_view(request, product_id, review_id=None):
     product = get_object_or_404(queryset, id=product_id, is_active=True)
 
     # Добавляем в контекст данные о товаре в оффлан магазинах
-    # shops_data = [
-    #     {"colorproduct": colorproduct, "items": items}
-    #     for colorproduct in product.colorproduct.select_related("color")
-    #     for items in [
-    #         [
-    #             # Исключаем из списка товары, которых нет в наличии,
-    #             # а также товары на складе интернет-магазина
-    #             {"shop": item.shop, "quantity": item.quantity}
-    #             for item in colorproduct.colorproductshop.filter(
-    #                 quantity__gt=0
-    #             ).select_related(
-    #                 "shop", "colorproduct"
-    #             ).exclude(
-    #                 shop__name__icontains="Склад"
-    #             ).order_by("shop")
-    #         ]
-    #     ]
-    #     if items  # Добавляем в shops_data только если есть items
-    # ]
-
-    # Добавляем в контекст данные о товаре в оффлан магазинах
     grouped_data = defaultdict(list)
     for colorproductshop in (
         ColorProductShop.objects.filter(

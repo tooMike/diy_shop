@@ -24,86 +24,117 @@ def create_order(request):
         "colorproduct",
         "colorproduct__color",
     )
-    stores = Shop.objects.all()
+    stores = Shop.objects.exclude(name__icontains="Склад")
     context = {
         "carts": carts,
         "form": form,
         "stores": stores,
     }
-    if request.method == "POST":
-        if form.is_valid():
-            try:
-                with transaction.atomic():
-                    user = request.user
+    if request.method == "POST" and form.is_valid():
+        try:
+            with transaction.atomic():
+                user = request.user
 
-                    if carts.exists():
-                        requires_delivery = (
-                            form.cleaned_data["requires_delivery"] == "true"
+                if carts.exists():
+                    requires_delivery = (
+                        form.cleaned_data["requires_delivery"] == "true"
+                    )
+                    payment_on_get = (
+                        form.cleaned_data["payment_on_get"] == "true"
+                    )
+                    if requires_delivery:
+                        order = Order.objects.create(
+                            user=user,
+                            phone=form.cleaned_data["phone"],
+                            requires_delivery=requires_delivery,
+                            delivery_city=form.cleaned_data["delivery_city"],
+                            delivery_adress=form.cleaned_data[
+                                "delivery_adress"
+                            ],
+                            payment_on_get=payment_on_get,
                         )
-                        payment_on_get = (
-                            form.cleaned_data["payment_on_get"] == "true"
+                    else:
+                        order = Order.objects.create(
+                            user=user,
+                            phone=form.cleaned_data["phone"],
+                            requires_delivery=requires_delivery,
+                            shop=form.cleaned_data["shop"],
+                            payment_on_get=payment_on_get,
                         )
-                        if requires_delivery:
-                            order = Order.objects.create(
-                                user=user,
-                                phone=form.cleaned_data["phone"],
-                                requires_delivery=requires_delivery,
-                                delivery_city=form.cleaned_data[
-                                    "delivery_city"
-                                ],
-                                delivery_adress=form.cleaned_data[
-                                    "delivery_adress"
-                                ],
-                                payment_on_get=payment_on_get,
+
+                    # Одним запросом получаем доступное количество
+                    # товаров в выбранном магазине
+                    available_products = (
+                        ColorProductShop.objects.filter(
+                            colorproduct__shoppingcart__user=user,
+                            shop=form.cleaned_data["shop"],
+                        )
+                        .values("colorproduct")
+                        .annotate(total=Sum("quantity"))
+                    )
+
+                    # Проверяем, есть ли вообще товары в наличии
+                    # в выбранном магазине
+                    if not available_products:
+                        raise ValidationError(
+                            "В выбранном магазине товары отсутствуют. \
+                            Выберите другой магазин."
+                        )
+
+                    # Формируем словарь формата {"colorproduct": quantity}
+                    product_quantity = {}
+                    for product in available_products:
+                        product_quantity[product["colorproduct"]] = product[
+                            "total"
+                        ]
+
+                    # Формируем записи OrderProduct
+                    orderproduct = []
+                    for item in carts:
+                        available_quantity = product_quantity.get(
+                            item.colorproduct.id, None
+                        )
+                        # Проверяем доступен ли конкретный товар
+                        # в выбранном магазине
+                        if available_quantity is None:
+                            raise ValidationError(
+                                f"В выбранном магазине товар {item.product} отсутствует. \
+                                Выберите другой магазин."
                             )
-                        else:
-                            order = Order.objects.create(
-                                user=user,
-                                phone=form.cleaned_data["phone"],
-                                requires_delivery=requires_delivery,
-                                shop=form.cleaned_data["shop"],
-                                payment_on_get=payment_on_get,
+                        if (
+                            product_quantity[item.colorproduct.id]
+                            < item.quantity
+                        ):
+                            raise ValidationError(
+                                f"Недостаточное количество товаров: \
+                                    {item.product}: {item.colorproduct}. \
+                                    В наличии: {available_quantity}"
                             )
-
-                        orderproduct = []
-
-                        for item in carts:
-                            available_products = (
-                                ColorProductShop.objects.filter(
-                                    colorproduct__product=item.product
-                                ).aggregate(total=Sum("quantity"))["total"]
+                        orderproduct.append(
+                            OrderProduct(
+                                order=order,
+                                product=item.product,
+                                colorproduct=item.colorproduct,
+                                price=item.product.actual_price,
+                                quantity=item.quantity,
                             )
-                            if available_products < item.quantity:
-                                raise ValidationError(
-                                    f"Недостаточное количество товаров: \
-                                      {item.product}: {item.colorproduct}. \
-                                      В наличии: {available_products}"
-                                )
-                            orderproduct.append(
-                                OrderProduct(
-                                    order=order,
-                                    product=item.product,
-                                    colorproduct=item.colorproduct,
-                                    price=item.product.actual_price,
-                                    quantity=item.quantity,
-                                )
-                            )
+                        )
 
-                            # Здесь должно быть уменьшение количества товаров в наличии
+                        # Здесь должно быть уменьшение количества товаров в наличии
 
-                        # Создаем записи в БД для всех позиций в заказе
-                        OrderProduct.objects.bulk_create(orderproduct)
+                    # Создаем записи в БД для всех позиций в заказе
+                    OrderProduct.objects.bulk_create(orderproduct)
 
-                        # Очищаем корзину пользователя
-                        carts.delete()
+                    # Очищаем корзину пользователя
+                    carts.delete()
 
-                        messages.success(request, "Заказ оформлен")
-                        return redirect("main:index")
+                    messages.success(request, "Заказ оформлен")
+                    return redirect("main:index")
 
-            # Передаем сообщение об ошибке на страницу заказа
-            except ValidationError as e:
-                messages.error(request, e.message)
-                return redirect("order:create_order")
+        # Передаем сообщение об ошибке на страницу заказа
+        except ValidationError as e:
+            messages.error(request, e.message)
+            return redirect("order:create_order")
 
     return render(
         request, template_name="orders/create_order.html", context=context
