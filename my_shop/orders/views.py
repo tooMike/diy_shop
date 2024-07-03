@@ -64,14 +64,10 @@ def create_order(request):
 
                     # Одним запросом получаем доступное количество
                     # товаров в выбранном магазине
-                    available_products = (
-                        ColorProductShop.objects.filter(
-                            colorproduct__shoppingcart__user=user,
-                            shop=form.cleaned_data["shop"],
-                        )
-                        .values("colorproduct")
-                        .annotate(total=Sum("quantity"))
-                    )
+                    available_products = ColorProductShop.objects.filter(
+                        colorproduct__shoppingcart__user=user,
+                        shop=form.cleaned_data["shop"],
+                    ).annotate(total=Sum("quantity"))
 
                     # Проверяем, есть ли вообще товары в наличии
                     # в выбранном магазине
@@ -82,33 +78,29 @@ def create_order(request):
                         )
 
                     # Формируем словарь формата {"colorproduct": quantity}
-                    product_quantity = {}
+                    product_quantities = {}
                     for product in available_products:
-                        product_quantity[product["colorproduct"]] = product[
-                            "total"
-                        ]
+                        product_quantities[product.colorproduct_id] = product
 
                     # Формируем записи OrderProduct
                     orderproduct = []
+                    shop_quantity = []
                     for item in carts:
-                        available_quantity = product_quantity.get(
+                        product_quantity = product_quantities.get(
                             item.colorproduct.id, None
                         )
                         # Проверяем доступен ли конкретный товар
                         # в выбранном магазине
-                        if available_quantity is None:
+                        if product_quantity is None:
                             raise ValidationError(
                                 f"В выбранном магазине товар {item.product} отсутствует. \
                                 Выберите другой магазин."
                             )
-                        if (
-                            product_quantity[item.colorproduct.id]
-                            < item.quantity
-                        ):
+                        if product_quantity.total < item.quantity:
                             raise ValidationError(
                                 f"Недостаточное количество товаров: \
                                     {item.product}: {item.colorproduct}. \
-                                    В наличии: {available_quantity}"
+                                    В наличии: {product_quantity.total}"
                             )
                         orderproduct.append(
                             OrderProduct(
@@ -120,7 +112,17 @@ def create_order(request):
                             )
                         )
 
-                        # Здесь должно быть уменьшение количества товаров в наличии
+                        # Обновляем наличие товара в выбранном магазину
+                        product_quantity.quantity -= item.quantity
+                        # Формируем список для bulk_update
+                        shop_quantity.append(
+                            product_quantity
+                        )
+
+                    # Обновляем наличие в магазинах для всех позиций в заказе
+                    ColorProductShop.objects.bulk_update(
+                        shop_quantity, ["quantity"]
+                    )
 
                     # Создаем записи в БД для всех позиций в заказе
                     OrderProduct.objects.bulk_create(orderproduct)
