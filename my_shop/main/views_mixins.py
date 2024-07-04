@@ -1,4 +1,9 @@
 from django.conf import settings
+from django.contrib.postgres.search import (
+    SearchQuery,
+    SearchVector,
+    SearchRank,
+)
 from django.db.models import Avg, Count, OuterRef, Subquery, Sum
 from django.shortcuts import get_object_or_404
 from django_filters.views import FilterView
@@ -53,9 +58,12 @@ class BaseObjectListViewMixin(FilterView):
             queryset = queryset.order_by(product_sort)
 
         # Полнотекстовый поиск
-        product_name = self.request.GET.get('product_name')
+        product_name = self.request.GET.get("product_name")
         if product_name:
-            queryset = queryset.filter(name__search=product_name)
+            search_query = SearchQuery(product_name)
+            queryset = queryset.annotate(
+                search=SearchVector("name", "description"),
+            ).filter(search=search_query)
 
         return queryset
 
