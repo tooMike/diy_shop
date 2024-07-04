@@ -1,13 +1,16 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count, OuterRef, Subquery, Sum
 from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from api.code_schemas import product_detail_code_schema
 from api.mixins import ListViewSet, RetrieveViewSet
 from api.pagination import (CategoryManufacturerPagination, ProductsPagination,
                             ReviewsPagination)
@@ -113,6 +116,16 @@ class ProductsListViewSet(ListViewSet):
     pagination_class = ProductsPagination
 
 
+@method_decorator(
+    name="retrieve",
+    decorator=swagger_auto_schema(
+        responses={
+            200: openapi.Response(
+                "Product retrieved", product_detail_code_schema
+            )
+        }
+    ),
+)
 class ProductViewSet(RetrieveViewSet):
     """Представление для получения информации о конкретном товаре."""
 
@@ -123,12 +136,12 @@ class ProductViewSet(RetrieveViewSet):
     lookup_url_kwarg = "product_id"
     serializer_class = ProductDetailSerializer
 
-    @action(detail=False)
-    def reviews(self, request):
-        """Получение 5 последних отзывов о товаре."""
-        reviews = Review.objects.all()[:5]
-        serializer = ReviewSerializer(reviews, many=True)
-        return Response(serializer.data)
+    # @action(detail=False)
+    # def reviews(self, request):
+    #     """Получение 5 последних отзывов о товаре."""
+    #     reviews = Review.objects.all()[:5]
+    #     serializer = ReviewSerializer(reviews, many=True)
+    #     return Response(serializer.data)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

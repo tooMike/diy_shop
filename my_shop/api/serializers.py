@@ -9,20 +9,10 @@ from django.db.models import Sum
 from rest_framework import serializers
 
 from api.models import EmailCode
-from main.models import (
-    Category,
-    ColorProduct,
-    ColorProductShop,
-    Country,
-    Manufacturer,
-    Product,
-    Review,
-)
-from users.constants import (
-    CONFIRMATION_CODE_MAX_LENGTH,
-    PASSWORD_MAX_LENGTH,
-    USERNAME_MAX_LENGTH,
-)
+from main.models import (Category, ColorProduct, ColorProductShop, Country,
+                         Manufacturer, Product, Review)
+from users.constants import (CONFIRMATION_CODE_MAX_LENGTH, PASSWORD_MAX_LENGTH,
+                             USERNAME_MAX_LENGTH)
 from users.user_auth_utils import create_confirmation_code
 
 User = get_user_model()
@@ -156,23 +146,16 @@ class ProductsListSerializer(serializers.ModelSerializer):
         )
 
 
-class ColorProductSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = ColorProduct
-
-
 class ProductDetailSerializer(ProductsListSerializer):
     """Сериализатор для конкретного товара."""
 
     manufacturer = ManufacturerSerializer()
     offline_shops_data = serializers.SerializerMethodField()
     internet_shop_data = serializers.SerializerMethodField()
-    # available_colors = serializers.SerializerMethodField()
 
     def get_offline_shops_data(self, obj):
         """
-        Получаем данные о наличии товаров, их цвете и количестве
+        Получаем данные о наличии товаров и их цвете
         в оффлайн магазинах.
         """
         grouped_data = defaultdict(list)
@@ -204,8 +187,8 @@ class ProductDetailSerializer(ProductsListSerializer):
 
     def get_internet_shop_data(self, obj):
         """
-        Получаем информацию о доступных цветах и количестве
-        для заказа в интернет магазине.
+        Получаем данные о наличии товаров и их цвете
+        на складе интернет магазина.
         """
         get_data = (
             ColorProduct.objects.filter(
@@ -239,12 +222,13 @@ class ProductDetailSerializer(ProductsListSerializer):
             "manufacturer",
             "offline_shops_data",
             "internet_shop_data",
-            # "available_colors",
             "rating",
         )
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    """Сериализатор для отзывов."""
+
     author = serializers.SlugRelatedField(
         slug_field="username",
         read_only=True,
