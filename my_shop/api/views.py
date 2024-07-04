@@ -21,8 +21,7 @@ from api.serializers import (CategorySerializer, EmailCodeSerializer,
                              ReviewSerializer, UserRegistrationSerializer)
 from api.user_auth_utils import get_tokens_for_user
 from main.filters import ProductFilter
-from main.models import (Category, ColorProductShop, Manufacturer, Product,
-                         Review)
+from main.models import Category, ColorProductShop, Manufacturer, Product
 
 User = get_user_model()
 

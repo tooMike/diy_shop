@@ -1,9 +1,5 @@
 from django.conf import settings
-from django.contrib.postgres.search import (
-    SearchQuery,
-    SearchVector,
-    SearchRank,
-)
+from django.contrib.postgres.search import SearchQuery, SearchVector
 from django.db.models import Avg, Count, OuterRef, Subquery, Sum
 from django.shortcuts import get_object_or_404
 from django_filters.views import FilterView
