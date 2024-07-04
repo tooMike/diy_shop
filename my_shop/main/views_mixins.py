@@ -52,10 +52,10 @@ class BaseObjectListViewMixin(FilterView):
         if product_sort:
             queryset = queryset.order_by(product_sort)
 
-        # # Полнотекстовый поиск
-        # product_name = self.request.GET.get('product_name')
-        # if product_name:
-        #     queryset = queryset.filter(name__search=product_name)
+        # Полнотекстовый поиск
+        product_name = self.request.GET.get('product_name')
+        if product_name:
+            queryset = queryset.filter(name__search=product_name)
 
         return queryset
 
