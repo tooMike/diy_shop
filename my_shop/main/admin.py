@@ -1,10 +1,8 @@
 import nested_admin
 from django.contrib import admin
 
-from main.models import (Category, Color, ColorProduct, Country,
-                         Manufacturer, Product, Shop,
-                         ColorProductShop)
-
+from main.models import (Category, Color, ColorProduct, ColorProductShop,
+                         Country, Manufacturer, Product, Shop)
 
 
 class ColorProductShopInline(nested_admin.NestedStackedInline):

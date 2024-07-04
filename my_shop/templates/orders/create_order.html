@@ -139,7 +139,7 @@
                     <select class="form-select" id="shop" name="shop">
                         
                         <option value="">Выберите магазин...</option>
-                        {% for shop in form.shop.field.queryset %}
+                        {% for shop in shops %}
                             <option value="{{ shop.id }}">{{ shop.name }}</option>
                         {% endfor %}
                     </select>

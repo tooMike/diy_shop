@@ -1,13 +1,13 @@
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Sum
 from django.forms import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 
 from main.models import ColorProductShop, Shop
 from orders.forms import CreateOrderForm
 from orders.models import Order, OrderProduct
+from orders.utils import get_available_products
 from shopping_cart.models import ShoppingCart
 
 
@@ -17,7 +17,7 @@ def create_order(request):
     initial = {
         "first_name": request.user.first_name,
         "last_name": request.user.last_name,
-        "phone": request.user.phone
+        "phone": request.user.phone,
     }
     form = CreateOrderForm(data=request.POST or None, initial=initial)
     carts = ShoppingCart.objects.filter(user=request.user).select_related(
@@ -77,25 +77,16 @@ def create_order(request):
                             payment_on_get=payment_on_get,
                         )
 
-                    # Одним запросом получаем доступное количество
-                    # товаров в выбранном магазине
-                    available_products = ColorProductShop.objects.filter(
-                        colorproduct__shoppingcart__user=user,
-                        shop=shop,
-                    ).annotate(total=Sum("quantity"))
-
-                    # Проверяем, есть ли вообще товары в наличии
-                    # в выбранном магазине
-                    if not available_products:
+                    # Проверяем, есть ли товары из корзины пользователя
+                    # в наличии в выбранном магазине
+                    product_quantities = get_available_products(
+                        user=user, shop=shop
+                    )
+                    if not product_quantities:
                         raise ValidationError(
                             "В выбранном магазине товары отсутствуют. \
                             Выберите другой магазин."
                         )
-
-                    # Формируем словарь формата {"colorproduct": quantity}
-                    product_quantities = {}
-                    for product in available_products:
-                        product_quantities[product.colorproduct_id] = product
 
                     # Формируем записи OrderProduct
                     orderproduct = []
@@ -108,8 +99,8 @@ def create_order(request):
                         # в выбранном магазине
                         if product_quantity is None:
                             raise ValidationError(
-                                f"В выбранном магазине товар {item.product} отсутствует. \
-                                Выберите другой магазин."
+                                f"В выбранном магазине товар {item.product} \
+                                отсутствует. Выберите другой магазин."
                             )
                         if product_quantity.total < item.quantity:
                             raise ValidationError(

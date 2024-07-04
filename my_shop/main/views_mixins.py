@@ -5,7 +5,6 @@ from django_filters.views import FilterView
 
 from main.filters import ProductFilter
 from main.models import Category, ColorProductShop, Manufacturer, Product, Shop
-from shopping_cart.models import ShoppingCart
 
 paginate_by = getattr(settings, "PAGINATE_BY", 10)
 
@@ -38,11 +37,10 @@ class BaseObjectListViewMixin(FilterView):
                 num_products=Subquery(
                     ColorProductShop.objects.filter(
                         colorproduct__product=OuterRef("pk")
-                    ).values(
-                        "colorproduct__product"
-                    ).annotate(
-                        total=Sum("quantity")
-                    ).values("total")
+                    )
+                    .values("colorproduct__product")
+                    .annotate(total=Sum("quantity"))
+                    .values("total")
                 ),
                 rating=Avg("reviews__rating"),
             )
@@ -63,7 +61,7 @@ class BaseObjectListViewMixin(FilterView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["shops"] = Shop.objects.all()
+        context["shops"] = Shop.objects.exclude(name__icontains="Склад")
         # Передаем в контекст все shop_id из url (для фильтра по магазинам)
         context["selected_shop_ids"] = self.request.GET.getlist("shop_id")
 

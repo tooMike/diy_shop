@@ -123,6 +123,7 @@
                         </div>
 
                         <div class="list-group-item">
+                            {% if shops_data %}
                             <strong>Доступно в оффлайн магазинах:</strong>
                             <ul>
                             {% for shop_data in shops_data %}
@@ -148,6 +149,9 @@
                                 {% endif %}
                             {% endfor %}
                             </ul>
+                            {% else %}
+                                <strong>Недоступно в оффлайн магазинах</strong>
+                            {% endif %}
                         </div>
 
                         <div class="list-group-item">

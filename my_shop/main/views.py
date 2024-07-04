@@ -1,17 +1,12 @@
 from collections import defaultdict
+
 from django.conf import settings
 from django.db.models import Avg, Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 
 from main.forms import ReviewForm
-from main.models import (
-    Category,
-    ColorProduct,
-    ColorProductShop,
-    Manufacturer,
-    Product,
-    Review,
-)
+from main.models import (Category, ColorProduct, ColorProductShop,
+                         Manufacturer, Product, Review)
 from main.views_mixins import BaseObjectListViewMixin, ObjectListViewMixin
 
 paginate_by = getattr(settings, "PAGINATE_BY", 10)

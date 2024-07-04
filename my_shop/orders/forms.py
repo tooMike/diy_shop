@@ -1,4 +1,3 @@
-from typing import Any
 from django import forms
 
 from main.models import Shop
@@ -36,11 +35,11 @@ class CreateOrderForm(forms.Form):
 
         if requires_delivery:
             if not delivery_city:
-                self.add_error('delivery_city', 'Укажите город.')
+                self.add_error("delivery_city", "Укажите город.")
             if not delivery_address:
-                self.add_error('delivery_adress', 'Укажите адрес.')
+                self.add_error("delivery_adress", "Укажите адрес.")
         else:
             if not shop:
-                self.add_error('shop', 'Выберите магазин.')
+                self.add_error("shop", "Выберите магазин.")
 
         return cleaned_data

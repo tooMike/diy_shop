@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from main.models import ColorProduct, Shop, Product, Color
+from main.models import ColorProduct, Product, Shop
 
 User = get_user_model()
 
