@@ -1,37 +1,45 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Avg, Sum
+from django.db.models import Avg, Count, OuterRef, Subquery, Sum
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from api.mixins import RetrieveListViewSet
+from api.mixins import ListViewSet, RetrieveViewSet
 from api.pagination import (CategoryManufacturerPagination, ProductsPagination,
                             ReviewsPagination)
 from api.permissions import IsAdminStaffAuthorReadOnly
 from api.serializers import (CategorySerializer, EmailCodeSerializer,
                              GetTokenSerializer, ManufacturerSerializer,
-                             ProductDetailSerializer, ProductSerializer,
+                             ProductDetailSerializer, ProductsListSerializer,
                              ReviewSerializer, UserRegistrationSerializer)
 from api.user_auth_utils import get_tokens_for_user
 from main.filters import ProductFilter
-from main.models import Category, Manufacturer, Product, Review
+from main.models import (Category, ColorProductShop, Manufacturer, Product,
+                         Review)
 
 User = get_user_model()
 
 
+@swagger_auto_schema(
+    method="post", request_body=EmailCodeSerializer, security=[]
+)
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def email_send_confirmation_code(request):
-    """Представление для отправки кода подтверждения не емейл."""
+    """Представление для отправки кода подтверждения на емейл."""
     serializer = EmailCodeSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@swagger_auto_schema(
+    method="post", request_body=UserRegistrationSerializer, security=[]
+)
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def user_signup(request):
@@ -45,6 +53,9 @@ def user_signup(request):
     return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
+@swagger_auto_schema(
+    method="post", request_body=GetTokenSerializer, security=[]
+)
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def get_token(request):
@@ -58,32 +69,59 @@ def get_token(request):
     return Response(token, status=status.HTTP_200_OK)
 
 
-class ProductViewSet(RetrieveListViewSet):
+class ProductsListViewSet(ListViewSet):
     """Представление для получения товаров."""
 
-    queryset = Product.objects.filter(is_active=True).annotate(
-        # num_shop=Count("shop", distinct=True),
-        num_products=Sum(
-            "colorproduct__colorproductshop__quantity", distinct=True
-        ),
-        rating=Avg("reviews__rating"),
+    queryset = (
+        Product.objects.filter(
+            is_active=True,
+            # отдает только товары, которые есть в магазинах
+            colorproduct__colorproductshop__quantity__gt=0,
+        )
+        .select_related(
+            "manufacturer",
+            "category",
+        )
+        .annotate(
+            # Добавляем количество магазинов, где есть товар
+            num_shop=Count(
+                "colorproduct__colorproductshop__shop", distinct=True
+            ),
+            # Добавляем доступное количество товаров
+            num_products=Subquery(
+                ColorProductShop.objects.filter(
+                    colorproduct__product=OuterRef("pk")
+                )
+                .values("colorproduct__product")
+                .annotate(total=Sum("quantity"))
+                .values("total")
+            ),
+            # Добавляем средний рейтинг
+            rating=Avg("reviews__rating"),
+        )
+        .order_by("-rating")
     )
-    serializer_class = ProductSerializer
+    serializer_class = ProductsListSerializer
     filter_backends = (
         DjangoFilterBackend,
         filters.SearchFilter,
         filters.OrderingFilter,
     )
     filterset_class = ProductFilter
-    search_fields = ("name",)
+    search_fields = ("name", "description")
     ordering_fields = ("name", "actual_price", "rating")
-    lookup_url_kwarg = "product_id"
     pagination_class = ProductsPagination
 
-    def get_serializer_class(self):
-        if self.action == "retrieve":
-            return ProductDetailSerializer
-        return ProductSerializer
+
+class ProductViewSet(RetrieveViewSet):
+    """Представление для получения информации о конкретном товаре."""
+
+    queryset = Product.objects.annotate(
+        rating=Avg("reviews__rating"),
+        reviews_count=Count("reviews"),
+    ).select_related("category", "manufacturer", "manufacturer__country")
+    lookup_url_kwarg = "product_id"
+    serializer_class = ProductDetailSerializer
 
     @action(detail=False)
     def reviews(self, request):
@@ -116,8 +154,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, product=self.get_product())
 
 
-class CategoriesViewSet(RetrieveListViewSet):
-    """Представление для категорий."""
+class CategoriesViewSet(ListViewSet):
+    """Представление для получения списка категорий."""
 
     queryset = Category.objects.filter(is_active=True)
     pagination_class = CategoryManufacturerPagination
@@ -131,8 +169,8 @@ class CategoriesViewSet(RetrieveListViewSet):
         return super().get_queryset()
 
 
-class ManufacrurerViewSet(RetrieveListViewSet):
-    """Представление для получения производителей."""
+class ManufacrurerViewSet(ListViewSet):
+    """Представление для получения списка производителей."""
 
     queryset = Manufacturer.objects.filter(is_active=True)
     pagination_class = CategoryManufacturerPagination

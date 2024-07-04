@@ -1,20 +1,36 @@
+from collections import defaultdict
+
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.db.models import Sum
 from rest_framework import serializers
 
 from api.models import EmailCode
-from main.models import Category, Country, Manufacturer, Product, Review
-from users.constants import (CONFIRMATION_CODE_MAX_LENGTH, PASSWORD_MAX_LENGTH,
-                             USERNAME_MAX_LENGTH)
+from main.models import (
+    Category,
+    ColorProduct,
+    ColorProductShop,
+    Country,
+    Manufacturer,
+    Product,
+    Review,
+)
+from users.constants import (
+    CONFIRMATION_CODE_MAX_LENGTH,
+    PASSWORD_MAX_LENGTH,
+    USERNAME_MAX_LENGTH,
+)
 from users.user_auth_utils import create_confirmation_code
 
 User = get_user_model()
 
 
 class EmailCodeSerializer(serializers.Serializer):
+    """Сериализатор для отправки кода подтверждения на емейл пользователя."""
+
     email = serializers.EmailField()
 
     def create(self, validated_data):
@@ -111,7 +127,7 @@ class ManufacturerSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "country", "slug", "is_active")
 
 
-class ProductSerializer(serializers.ModelSerializer):
+class ProductsListSerializer(serializers.ModelSerializer):
     """Сериализатор для списка товаров."""
 
     category = serializers.SlugRelatedField(
@@ -140,32 +156,75 @@ class ProductSerializer(serializers.ModelSerializer):
         )
 
 
-class ProductDetailSerializer(ProductSerializer):
-    """Сериализатор для экземпляра продукта."""
+class ColorProductSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ColorProduct
+
+
+class ProductDetailSerializer(ProductsListSerializer):
+    """Сериализатор для конкретного товара."""
 
     manufacturer = ManufacturerSerializer()
-    shops_data = serializers.SerializerMethodField()
+    offline_shops_data = serializers.SerializerMethodField()
+    internet_shop_data = serializers.SerializerMethodField()
+    # available_colors = serializers.SerializerMethodField()
 
-    def get_shops_data(self, obj):
+    def get_offline_shops_data(self, obj):
         """
-        Получаем данные о наличии товаров, их цвете и количестве в магазинах.
+        Получаем данные о наличии товаров, их цвете и количестве
+        в оффлайн магазинах.
         """
-        shops_data = [
+        grouped_data = defaultdict(list)
+        for colorproductshop in (
+            ColorProductShop.objects.filter(
+                colorproduct__product=obj, quantity__gt=0
+            )
+            .exclude(shop__name__icontains="Склад")
+            .select_related("shop", "colorproduct", "colorproduct__color")
+        ):
+            grouped_data[colorproductshop.colorproduct].append(
+                {
+                    "shop": colorproductshop.shop.name,
+                    "shop_id": colorproductshop.shop.id,
+                    "quantity": colorproductshop.quantity,
+                }
+            )
+
+        offline_shops_data = [
             {
-                "shop_name": shopproduct.shop.name,
-                "items": [
-                    {
-                        "colour_name": item.colourproduct.colour.name,
-                        "quantity": item.quantity,
-                    }
-                    for item in shopproduct.shopproductcolourproduct.select_related(
-                        "colourproduct", "colourproduct__colour"
-                    )
-                ],
+                "color": colorproduct.color.name,
+                "color_id": colorproduct.color.id,
+                "items": items,
             }
-            for shopproduct in obj.shopproduct.select_related("shop")
+            for colorproduct, items in grouped_data.items()
         ]
-        return shops_data
+
+        return offline_shops_data
+
+    def get_internet_shop_data(self, obj):
+        """
+        Получаем информацию о доступных цветах и количестве
+        для заказа в интернет магазине.
+        """
+        get_data = (
+            ColorProduct.objects.filter(
+                product=obj,
+                colorproductshop__shop__name__icontains="Склад",
+                colorproductshop__quantity__gt=0,
+            )
+            .select_related("color")
+            .annotate(total=Sum("colorproductshop__quantity"))
+        )
+        internet_shop_data = [
+            {
+                "color": item.color.name,
+                "color_id": item.color.id,
+                "quantity": item.total,
+            }
+            for item in get_data
+        ]
+        return list(internet_shop_data)
 
     class Meta:
         model = Product
@@ -178,9 +237,9 @@ class ProductDetailSerializer(ProductSerializer):
             "image",
             "category",
             "manufacturer",
-            "shops_data",
-            "num_shop",
-            "num_products",
+            "offline_shops_data",
+            "internet_shop_data",
+            # "available_colors",
             "rating",
         )
 

@@ -57,13 +57,13 @@ class BaseObjectListViewMixin(FilterView):
         if product_sort:
             queryset = queryset.order_by(product_sort)
 
-        # Полнотекстовый поиск
-        product_name = self.request.GET.get("product_name")
-        if product_name:
-            search_query = SearchQuery(product_name)
-            queryset = queryset.annotate(
-                search=SearchVector("name", "description"),
-            ).filter(search=search_query)
+        # Полнотекстовый поиск: только для PostgreSQL
+        # product_name = self.request.GET.get("product_name")
+        # if product_name:
+        #     search_query = SearchQuery(product_name)
+        #     queryset = queryset.annotate(
+        #         search=SearchVector("name", "description"),
+        #     ).filter(search=search_query)
 
         return queryset
 

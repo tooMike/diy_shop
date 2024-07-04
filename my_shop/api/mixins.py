@@ -1,7 +1,13 @@
 from rest_framework import mixins, viewsets
 
 
-class RetrieveListViewSet(
-    mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
+class ListViewSet(
+    mixins.ListModelMixin, viewsets.GenericViewSet
 ):
-    pass
+    """Миксин для списковых представлений."""
+
+
+class RetrieveViewSet(
+    mixins.RetrieveModelMixin, viewsets.GenericViewSet
+):
+    """Миксин для конкретного представления."""
