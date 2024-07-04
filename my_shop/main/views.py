@@ -5,8 +5,14 @@ from django.db.models import Avg, Count, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 
 from main.forms import ReviewForm
-from main.models import (Category, ColorProduct, ColorProductShop,
-                         Manufacturer, Product, Review)
+from main.models import (
+    Category,
+    ColorProduct,
+    ColorProductShop,
+    Manufacturer,
+    Product,
+    Review,
+)
 from main.views_mixins import BaseObjectListViewMixin, ObjectListViewMixin
 
 paginate_by = getattr(settings, "PAGINATE_BY", 10)
@@ -56,6 +62,12 @@ def product_detail_view(request, product_id, review_id=None):
         .annotate(total=Sum("colorproductshop__quantity"))
     )
 
+    # Добавляем список достпуных цветов
+    available_colors = list(set(
+        list(storage_data)
+        + [item["colorproduct"] for item in shops_data]
+    ))
+
     # Добавляем выбранные пользователем цвета
     selected_colorproduct = request.GET.getlist("color")
 
@@ -86,6 +98,7 @@ def product_detail_view(request, product_id, review_id=None):
         "product": product,
         "shops_data": shops_data,
         "storage_data": storage_data,
+        "available_colors": available_colors,
         "selected_colorproduct": selected_colorproduct,
         "form": form,
         "reviews": reviews,

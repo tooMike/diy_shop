@@ -45,12 +45,21 @@
                     <p><strong>Страна:</strong> {{ product.manufacturer.country }}</p>
                     <form id="colorFilterForm" method="GET">
                         <p><strong>Выберите цвет:</strong></p>
-                        {% for item in shops_data %}
+                        {% comment %} {% for item in shops_data %}
                             <label class="color-button {% if item.colorproduct.id|stringformat:'s' in selected_colorproduct %}selected{% endif %}">
                                 <input type="radio" name="color" value="{{ item.colorproduct.id }}" onchange="submitForm()"
                                     {% if item.colorproduct.id|stringformat:'s' in selected_colorproduct %}checked{% endif %}
                                     style="display: none;">
                                 {{ item.colorproduct }}
+                            </label>
+                        {% endfor %} {% endcomment %}
+
+                        {% for item in available_colors %}
+                            <label class="color-button {% if item.id|stringformat:'s' in selected_colorproduct %}selected{% endif %}">
+                                <input type="radio" name="color" value="{{ item.id }}" onchange="submitForm()"
+                                    {% if item.id|stringformat:'s' in selected_colorproduct %}checked{% endif %}
+                                    style="display: none;">
+                                {{ item }}
                             </label>
                         {% endfor %}
                     </form>

@@ -39,7 +39,7 @@
                     {% for cart in carts %}
                         <tr>
                             <td><a href="{% url "main:product_detail" cart.product.id %}">{{ cart.product.name }}</a></td>
-                            <td>{{ cart.colorproduct.name }}</td>
+                            <td>{{ cart.colorproduct }}</td>
                             <td>
                                 <a href="{% url 'cart:cart_change' cart.colorproduct.id %}" class="btn btn-sm btn-compact btn-outline-secondary">-</a>
                                 {{ cart.quantity }}

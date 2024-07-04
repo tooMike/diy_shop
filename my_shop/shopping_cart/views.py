@@ -11,12 +11,12 @@ def show_cart(request):
     if request.user.is_authenticated:
         shopping_carts = ShoppingCart.objects.filter(
             user=request.user
-        ).select_related("colorproduct", "product")
+        ).select_related("colorproduct", "colorproduct__color", "product")
     else:
         shopping_carts = (
             ShoppingCart.objects.exclude(session_key=None)
             .filter(session_key=request.session.session_key)
-            .select_related("colorproduct", "product")
+            .select_related("colorproduct", "colorproduct__color", "product")
         )
     context = {"carts": shopping_carts}
 
