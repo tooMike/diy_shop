@@ -55,27 +55,8 @@ def create_order(request):
                     )
                     if requires_delivery:
                         shop = get_object_or_404(Shop, name__icontains="Склад")
-
-                        order = Order.objects.create(
-                            user=user,
-                            phone=form.cleaned_data["phone"],
-                            requires_delivery=requires_delivery,
-                            delivery_city=form.cleaned_data["delivery_city"],
-                            delivery_adress=form.cleaned_data[
-                                "delivery_adress"
-                            ],
-                            shop=shop,
-                            payment_on_get=payment_on_get,
-                        )
                     else:
                         shop = form.cleaned_data["shop"]
-                        order = Order.objects.create(
-                            user=user,
-                            phone=form.cleaned_data["phone"],
-                            requires_delivery=requires_delivery,
-                            shop=shop,
-                            payment_on_get=payment_on_get,
-                        )
 
                     # Проверяем, есть ли товары из корзины пользователя
                     # в наличии в выбранном магазине
@@ -91,15 +72,17 @@ def create_order(request):
                     # Формируем записи OrderProduct
                     orderproduct = []
                     shop_quantity = []
+
+                    # Проверяем наличие каждого товара в выбранного магазине
                     for item in carts:
                         product_quantity = product_quantities.get(
                             item.colorproduct.id, None
                         )
                         # Проверяем доступен ли конкретный товар
                         # в выбранном магазине
-                        if product_quantity is None:
+                        if not product_quantity:
                             raise ValidationError(
-                                f"В выбранном магазине товар {item.product} \
+                                f"В выбранном магазине товар {item.product} {item.colorproduct.color.name}\
                                 отсутствует. Выберите другой магазин."
                             )
                         if product_quantity.total < item.quantity:
@@ -108,6 +91,34 @@ def create_order(request):
                                     {item.product}: {item.colorproduct}. \
                                     В наличии: {product_quantity.total}"
                             )
+
+                    # Если проверки успешно прошли, то создаем заказ
+                    if requires_delivery:
+                        order = Order.objects.create(
+                            user=user,
+                            phone=form.cleaned_data["phone"],
+                            requires_delivery=requires_delivery,
+                            delivery_city=form.cleaned_data["delivery_city"],
+                            delivery_adress=form.cleaned_data[
+                                "delivery_adress"
+                            ],
+                            shop=shop,
+                            payment_on_get=payment_on_get,
+                        )
+                    else:
+                        order = Order.objects.create(
+                            user=user,
+                            phone=form.cleaned_data["phone"],
+                            requires_delivery=requires_delivery,
+                            shop=shop,
+                            payment_on_get=payment_on_get,
+                        )
+
+                    # Формируем список товаров для этого заказа
+                    for item in carts:
+                        product_quantity = product_quantities.get(
+                            item.colorproduct.id, None
+                        )
                         orderproduct.append(
                             OrderProduct(
                                 order=order,

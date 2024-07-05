@@ -325,12 +325,12 @@ class OrderCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания заказа."""
 
     delivery_city = serializers.CharField(
-        max_lenght=30, min_length=3, required=False
+        max_length=30, min_length=3, required=False
     )
     delivery_adress = serializers.CharField(
-        max_lenght=150, min_length=3, required=False
+        max_length=150, min_length=3, required=False
     )
-    shop = serializers.PrimaryKeyRelatedField(required=False)
+    shop = serializers.PrimaryKeyRelatedField(queryset=Shop.objects.all(), required=False)
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:

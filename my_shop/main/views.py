@@ -66,7 +66,7 @@ def product_detail_view(request, product_id, review_id=None):
     selected_colorproduct = request.GET.getlist("color")
 
     # Получаем все комментарии и их авторов
-    reviews = product.reviews.select_related("author")
+    reviews = product.reviews.select_related("user")
 
     # Проверяем, хочет ли пользователь отредактировать свой отзыв
     if review_id is not None:
@@ -82,7 +82,7 @@ def product_detail_view(request, product_id, review_id=None):
     )
     if form.is_valid():
         review = form.save(commit=False)
-        review.author = request.user
+        review.user = request.user
         review.product = product
         review.save()
         return redirect(product.get_absolute_url())
@@ -105,7 +105,7 @@ def add_review(request, product_id):
     form = ReviewForm(request.POST, files=request.FILES or None)
     if form.is_valid():
         review = form.save(commit=False)
-        review.author = request.user
+        review.user = request.user
         review.product = product
         review.save()
     return redirect(product.get_absolute_url())
@@ -113,7 +113,7 @@ def add_review(request, product_id):
 
 def delete_review(request, review_id):
     review = get_object_or_404(Review, id=review_id)
-    if review.author == request.user:
+    if review.user == request.user:
         review.delete()
     return redirect(review.product.get_absolute_url())
 

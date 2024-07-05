@@ -221,7 +221,7 @@
     {% for review in reviews %}
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
-            <h5>{{ review.author }}</h5>
+            <h5>{{ review.user }}</h5>
             <h6 class="text-muted">{{ review.created_at }}</h6>
             <div class="rating">
                {% get_range review.rating as review_range %}
@@ -233,7 +233,7 @@
             {% if review.photo %}
               <img src="{{ review.photo.url }}" class="img-thumbnail" alt="Фото отзыва">
             {% endif %}
-            {% if request.user == review.author %}
+            {% if request.user == review.user %}
                 <a href="{% url 'main:edit_review' product.id review.id %}#review_form" class="btn btn-outline-primary btn-sm">Редактировать</a>
                 <a href="{% url 'main:delete_review' review.id %}" class="btn btn-outline-danger btn-sm">Удалить</a>
             {% endif %}
