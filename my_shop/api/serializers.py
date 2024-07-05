@@ -5,12 +5,15 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.db import transaction
 from django.db.models import Sum
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from api.models import EmailCode
 from main.models import (Category, Color, ColorProduct, ColorProductShop,
-                         Country, Manufacturer, Product, Review)
+                         Country, Manufacturer, Product, Review, Shop)
+from orders.models import Order
 from shopping_cart.models import ShoppingCart
 from users.constants import (CONFIRMATION_CODE_MAX_LENGTH, PASSWORD_MAX_LENGTH,
                              USERNAME_MAX_LENGTH)
@@ -316,3 +319,139 @@ class ShoppingCartListSerializer(serializers.ModelSerializer):
     def get_actual_price(self, obj):
         """Получаем цену товара."""
         return obj.product.actual_price
+
+
+class OrderCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания заказа."""
+
+    delivery_city = serializers.CharField(
+        max_lenght=30, min_length=3, required=False
+    )
+    delivery_adress = serializers.CharField(
+        max_lenght=150, min_length=3, required=False
+    )
+    shop = serializers.PrimaryKeyRelatedField(required=False)
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Order
+        fields = (
+            "id",
+            "first_name",
+            "last_name",
+            "phone",
+            "requires_delivery",
+            "delivery_city",
+            "delivery_adress",
+            "shop",
+            "payment_on_get",
+            "is_paid",
+            "status",
+            "user",
+        )
+        read_only_fields = ("id", "is_paid", "status")
+
+    @transaction.atomic
+    def create(self, validated_data):
+        user = validated_data["user"]
+
+        # Сохраняем данные в модель пользователя,
+        # если этих данных еще нет
+        if not user.first_name:
+            user.first_name = validated_data["first_name"]
+        if not user.last_name:
+            user.last_name = validated_data["last_name"]
+        if not user.phone:
+            user.phone = validated_data["phone"]
+        user.save()
+
+        # Получаем данные о корзинах пользователя
+        carts = ShoppingCart.objects.filter(user=user)
+
+        if carts.exists():
+            requires_delivery = validated_data["requires_delivery"]
+            payment_on_get = validated_data["payment_on_get"]
+            if requires_delivery:
+                # Ведем проверку по наличию товара на складе интернет магазина
+                shop = get_object_or_404(Shop, name__icontains="Склад")
+                order = Order.objects.create(
+                    user=user,
+                    phone=form.cleaned_data["phone"],
+                    requires_delivery=requires_delivery,
+                    delivery_city=form.cleaned_data["delivery_city"],
+                    delivery_adress=form.cleaned_data[
+                        "delivery_adress"
+                    ],
+                    shop=shop,
+                    payment_on_get=payment_on_get,
+                )
+            else:
+                shop = form.cleaned_data["shop"]
+                order = Order.objects.create(
+                    user=user,
+                    phone=form.cleaned_data["phone"],
+                    requires_delivery=requires_delivery,
+                    shop=shop,
+                    payment_on_get=payment_on_get,
+                )
+
+            # Проверяем, есть ли товары из корзины пользователя
+            # в наличии в выбранном магазине
+            product_quantities = get_available_products(
+                user=user, shop=shop
+            )
+            if not product_quantities:
+                raise ValidationError(
+                    "В выбранном магазине товары отсутствуют. \
+                    Выберите другой магазин."
+                )
+
+            # Формируем записи OrderProduct
+            orderproduct = []
+            shop_quantity = []
+            for item in carts:
+                product_quantity = product_quantities.get(
+                    item.colorproduct.id, None
+                )
+                # Проверяем доступен ли конкретный товар
+                # в выбранном магазине
+                if product_quantity is None:
+                    raise ValidationError(
+                        f"В выбранном магазине товар {item.product} \
+                        отсутствует. Выберите другой магазин."
+                    )
+                if product_quantity.total < item.quantity:
+                    raise ValidationError(
+                        f"Недостаточное количество товаров: \
+                            {item.product}: {item.colorproduct}. \
+                            В наличии: {product_quantity.total}"
+                    )
+                orderproduct.append(
+                    OrderProduct(
+                        order=order,
+                        product=item.product,
+                        colorproduct=item.colorproduct,
+                        price=item.product.actual_price,
+                        quantity=item.quantity,
+                    )
+                )
+
+                # Обновляем наличие товара в выбранном магазину
+                product_quantity.quantity -= item.quantity
+                # Формируем список для bulk_update
+                shop_quantity.append(product_quantity)
+
+            # Обновляем наличие в магазинах для всех позиций в заказе
+            ColorProductShop.objects.bulk_update(
+                shop_quantity, ["quantity"]
+            )
+
+            # Создаем записи в БД для всех позиций в заказе
+            OrderProduct.objects.bulk_create(orderproduct)
+
+            # Очищаем корзину пользователя
+            carts.delete()
+
+            messages.success(request, "Заказ оформлен")
+            return redirect("main:index")
+        return super().create(validated_data)

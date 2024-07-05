@@ -18,12 +18,14 @@ from api.permissions import IsAdminStaffOwnerReadOnly, IsOwner
 from api.serializers import (CategorySerializer, EmailCodeSerializer,
                              GetTokenSerializer, ManufacturerSerializer,
                              ProductDetailSerializer, ProductsListSerializer,
-                             ReviewSerializer, ShoppingCartListSerializer,
-                             ShoppingCartCreateSerializer, ShoppingCartUpdateSerializer,
+                             ReviewSerializer, ShoppingCartCreateSerializer,
+                             ShoppingCartListSerializer,
+                             ShoppingCartUpdateSerializer,
                              UserRegistrationSerializer)
 from api.user_auth_utils import get_tokens_for_user
 from main.filters import ProductFilter
 from main.models import Category, ColorProductShop, Manufacturer, Product
+from orders.models import Order
 from shopping_cart.models import ShoppingCart
 
 User = get_user_model()
@@ -213,3 +215,15 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             return (IsAuthenticated(),)
         return super().get_permissions()
+    
+
+class OrderViewSet(viewsets.ModelViewSet):
+    """Представление для заказов."""
+
+    permission_classes = (IsOwner,)
+    http_method_names = ["get", "post"]
+
+    def get_queryset(self):
+        """Возвращаем только заказы текущего пользователя."""
+        return Order.objects.filter(user=self.request.user)
+    

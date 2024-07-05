@@ -14,6 +14,9 @@ router_v1.register(
     "cart", api_view.ShoppingCartViewSet, basename="shopping_cart"
 )
 router_v1.register(
+    "order", api_view.OrderViewSet, basename="order"
+)
+router_v1.register(
     r"product/(?P<product_id>\d+)/reviews",
     api_view.ReviewViewSet,
     basename="review",
