@@ -230,7 +230,7 @@ class Review(models.Model):
     product = models.ForeignKey(
         Product, verbose_name="Товар", on_delete=models.CASCADE
     )
-    author = models.ForeignKey(
+    user = models.ForeignKey(
         User, verbose_name="Автор", on_delete=models.CASCADE
     )
 

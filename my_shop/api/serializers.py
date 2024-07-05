@@ -9,8 +9,9 @@ from django.db.models import Sum
 from rest_framework import serializers
 
 from api.models import EmailCode
-from main.models import (Category, ColorProduct, ColorProductShop, Country,
-                         Manufacturer, Product, Review)
+from main.models import (Category, Color, ColorProduct, ColorProductShop,
+                         Country, Manufacturer, Product, Review)
+from shopping_cart.models import ShoppingCart
 from users.constants import (CONFIRMATION_CODE_MAX_LENGTH, PASSWORD_MAX_LENGTH,
                              USERNAME_MAX_LENGTH)
 from users.user_auth_utils import create_confirmation_code
@@ -47,6 +48,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     )
     password = serializers.CharField(max_length=128, write_only=True)
 
+    class Meta:
+        model = User
+        fields = ("username", "email", "confirmation_code", "password")
+
     def validate(self, data):
         """Проверяем корректность пары email-confirmation_code."""
         email = data.get("email")
@@ -68,10 +73,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             validated_data.get("password")
         )
         return super(UserRegistrationSerializer, self).create(validated_data)
-
-    class Meta:
-        model = User
-        fields = ("username", "email", "confirmation_code", "password")
 
 
 class GetTokenSerializer(serializers.Serializer):
@@ -153,6 +154,22 @@ class ProductDetailSerializer(ProductsListSerializer):
     offline_shops_data = serializers.SerializerMethodField()
     internet_shop_data = serializers.SerializerMethodField()
 
+    class Meta:
+        model = Product
+        fields = (
+            "id",
+            "name",
+            "price",
+            "sale",
+            "actual_price",
+            "image",
+            "category",
+            "manufacturer",
+            "offline_shops_data",
+            "internet_shop_data",
+            "rating",
+        )
+
     def get_offline_shops_data(self, obj):
         """
         Получаем данные о наличии товаров и их цвете
@@ -209,22 +226,6 @@ class ProductDetailSerializer(ProductsListSerializer):
         ]
         return list(internet_shop_data)
 
-    class Meta:
-        model = Product
-        fields = (
-            "id",
-            "name",
-            "price",
-            "sale",
-            "actual_price",
-            "image",
-            "category",
-            "manufacturer",
-            "offline_shops_data",
-            "internet_shop_data",
-            "rating",
-        )
-
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для отзывов."""
@@ -233,6 +234,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         slug_field="username",
         read_only=True,
     )
+
+    class Meta:
+        model = Review
+        fields = ("id", "text", "photo", "created_at", "rating", "author")
 
     def validate(self, data):
         """Пользователь может добавить только 1 отзыв к товару."""
@@ -245,6 +250,69 @@ class ReviewSerializer(serializers.ModelSerializer):
                 )
         return data
 
+
+class ShoppingCartCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор для добавления нового товара в корзину."""
+
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
     class Meta:
-        model = Review
-        fields = ("id", "text", "photo", "created_at", "rating", "author")
+        model = ShoppingCart
+        fields = ("id", "colorproduct", "quantity", "user")
+        read_only_fields = ("id",)
+
+    def create(self, validated_data):
+        """Добавляем поле product при создании."""
+        colorproduct = validated_data.get("colorproduct")
+        quantity = validated_data.get("quantity")
+        user = validated_data.get("user")
+        product = colorproduct.product
+
+        cart = ShoppingCart.objects.create(
+            colorproduct=colorproduct,
+            quantity=quantity,
+            user=user,
+            product=product,
+        )
+        return cart
+
+
+class ShoppingCartUpdateSerializer(serializers.ModelSerializer):
+
+    quantity = serializers.IntegerField(max_value=32767, min_value=1)
+
+    class Meta:
+        model = ShoppingCart
+        fields = ("id", "quantity")
+        read_only_fields = ("id",)
+
+
+class ShoppingCartListSerializer(serializers.ModelSerializer):
+
+    color = serializers.SerializerMethodField()
+    product_name = serializers.SerializerMethodField()
+    actual_price = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ShoppingCart
+        fields = (
+            "id",
+            "product",
+            "product_name",
+            "colorproduct",
+            "color",
+            "actual_price",
+            "quantity",
+        )
+
+    def get_color(self, obj):
+        """Получаем цвет товара."""
+        return obj.colorproduct.color.name
+
+    def get_product_name(self, obj):
+        """Получаем название товара."""
+        return obj.product.name
+
+    def get_actual_price(self, obj):
+        """Получаем цену товара."""
+        return obj.product.actual_price

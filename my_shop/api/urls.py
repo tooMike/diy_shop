@@ -8,7 +8,10 @@ router_v1.register(
     "categories", api_view.CategoriesViewSet, basename="categories"
 )
 router_v1.register(
-    "manufacturer", api_view.ManufacrurerViewSet, basename="manufacturer"
+    "manufacturer", api_view.ManufacturerViewSet, basename="manufacturer"
+)
+router_v1.register(
+    "cart", api_view.ShoppingCartViewSet, basename="shopping_cart"
 )
 router_v1.register(
     r"product/(?P<product_id>\d+)/reviews",

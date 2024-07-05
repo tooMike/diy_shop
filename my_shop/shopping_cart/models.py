@@ -39,7 +39,7 @@ class ShoppingCart(models.Model):
         ColorProduct, verbose_name="Товар цвета", on_delete=models.CASCADE
     )
     quantity = models.PositiveSmallIntegerField(verbose_name="Количество")
-    # Добавляем поле чтобы session_key для неаторизованных пользователей
+    # Добавляем поле чтобы session_key для неавторизованных пользователей
     session_key = models.CharField(max_length=32, null=True, blank=True)
     created_at = models.DateTimeField(
         auto_now_add=True, verbose_name="Дата добавления"

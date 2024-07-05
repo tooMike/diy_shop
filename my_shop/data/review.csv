@@ -1,4 +1,4 @@
-text,rating,product_id,author_id
+text,rating,product_id,user_id
 Не оправдал ожиданий,3,1,1
 "Плохое качество, не советую",4,1,2
 "Плохое качество, не советую",4,2,1

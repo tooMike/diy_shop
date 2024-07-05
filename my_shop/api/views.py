@@ -7,21 +7,24 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from api.code_schemas import product_detail_code_schema
 from api.mixins import ListViewSet, RetrieveViewSet
 from api.pagination import (CategoryManufacturerPagination, ProductsPagination,
                             ReviewsPagination)
-from api.permissions import IsAdminStaffAuthorReadOnly
+from api.permissions import IsAdminStaffOwnerReadOnly, IsOwner
 from api.serializers import (CategorySerializer, EmailCodeSerializer,
                              GetTokenSerializer, ManufacturerSerializer,
                              ProductDetailSerializer, ProductsListSerializer,
-                             ReviewSerializer, UserRegistrationSerializer)
+                             ReviewSerializer, ShoppingCartListSerializer,
+                             ShoppingCartCreateSerializer, ShoppingCartUpdateSerializer,
+                             UserRegistrationSerializer)
 from api.user_auth_utils import get_tokens_for_user
 from main.filters import ProductFilter
 from main.models import Category, ColorProductShop, Manufacturer, Product
+from shopping_cart.models import ShoppingCart
 
 User = get_user_model()
 
@@ -147,9 +150,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """Представление для отзывов."""
 
     serializer_class = ReviewSerializer
-    http_method_names = ("get", "post", "patch", "delete")
+    http_method_names = ["get", "post", "patch", "delete"]
     pagination_class = ReviewsPagination
-    permission_classes = (IsAdminStaffAuthorReadOnly,)
+    permission_classes = (IsAdminStaffOwnerReadOnly,)
     filter_backends = (filters.OrderingFilter, DjangoFilterBackend)
     ordering_fields = ("created_at", "rating")
     filterset_fields = ("rating",)
@@ -172,25 +175,41 @@ class CategoriesViewSet(ListViewSet):
     queryset = Category.objects.filter(is_active=True)
     pagination_class = CategoryManufacturerPagination
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminStaffAuthorReadOnly,)
-
-    def get_queryset(self):
-        """Отдаем все категории только сотрудникам."""
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            return Category.objects.all()
-        return super().get_queryset()
+    permission_classes = (IsAuthenticated,)
 
 
-class ManufacrurerViewSet(ListViewSet):
+class ManufacturerViewSet(ListViewSet):
     """Представление для получения списка производителей."""
 
     queryset = Manufacturer.objects.filter(is_active=True)
     pagination_class = CategoryManufacturerPagination
     serializer_class = ManufacturerSerializer
-    permission_classes = (IsAdminStaffAuthorReadOnly,)
+    permission_classes = (IsAuthenticated,)
+
+
+class ShoppingCartViewSet(viewsets.ModelViewSet):
+    """Представление для корзины товаров."""
+
+    permission_classes = (IsOwner,)
+    http_method_names = ["get", "post", "patch", "delete"]
 
     def get_queryset(self):
-        """Отдаем всех производителей только сотрудникам."""
-        if self.request.user.is_superuser or self.request.user.is_staff:
-            return Manufacturer.objects.all()
-        return super().get_queryset()
+        """Возвращаем только корзину текущего пользователя."""
+        return ShoppingCart.objects.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return ShoppingCartCreateSerializer
+        elif self.action == "partial_update":
+            return ShoppingCartUpdateSerializer
+        else:
+            return ShoppingCartListSerializer
+
+    def get_permissions(self):
+        """
+        Создание корзины разрешаем всем аутентифицированным пользователя.
+        Остальные операции разрешаем только автору корзины.
+        """
+        if self.action == "create":
+            return (IsAuthenticated(),)
+        return super().get_permissions()
