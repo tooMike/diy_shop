@@ -3,7 +3,6 @@ from collections import defaultdict
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models import Sum
@@ -14,6 +13,8 @@ from api.models import EmailCode
 from main.models import (Category, Color, ColorProduct, ColorProductShop,
                          Country, Manufacturer, Product, Review, Shop)
 from orders.models import Order
+from orders.utils import (get_available_products, prepare_order_products,
+                          update_user_info)
 from shopping_cart.models import ShoppingCart
 from users.constants import (CONFIRMATION_CODE_MAX_LENGTH, PASSWORD_MAX_LENGTH,
                              USERNAME_MAX_LENGTH)
@@ -95,7 +96,9 @@ class GetTokenSerializer(serializers.Serializer):
         user = authenticate(username=username, password=password)
         if user:
             return data
-        raise ValidationError("Неверное имя пользователя или пароль")
+        raise serializers.ValidationError(
+            "Неверное имя пользователя или пароль"
+        )
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -330,7 +333,9 @@ class OrderCreateSerializer(serializers.ModelSerializer):
     delivery_adress = serializers.CharField(
         max_length=150, min_length=3, required=False
     )
-    shop = serializers.PrimaryKeyRelatedField(queryset=Shop.objects.all(), required=False)
+    shop = serializers.PrimaryKeyRelatedField(
+        queryset=Shop.objects.all(), required=False
+    )
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
@@ -351,107 +356,85 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "is_paid", "status")
 
+    def validate(self, data):
+        """
+        Проверяем, что у пользователя добавлены товары в корзину
+        и нужное количество каждого товара есть в выбранном магазине.
+        """
+        user = data.get("user")
+        carts = ShoppingCart.objects.filter(user=user)
+
+        if not carts.exists():
+            raise serializers.ValidationError(
+                "Нельзя создать заказ с пустой корзиной."
+            )
+
+        requires_delivery = data["requires_delivery"]
+
+        if requires_delivery:
+            shop = get_object_or_404(Shop, name__icontains="Склад")
+        else:
+            shop = data["shop"]
+
+        product_quantities = get_available_products(user=user, shop=shop)
+        for item in carts:
+            product_quantity = product_quantities.get(item.colorproduct_id)
+            # Проверяем доступен ли конкретный товар в выбранном магазине
+            if not product_quantity:
+                raise serializers.ValidationError(
+                    f"В выбранном магазине товар {item.product} \
+                    {item.colorproduct} отсутствует. Выберите другой магазин."
+                )
+            if product_quantity.total < item.quantity:
+                raise serializers.ValidationError(
+                    f"Недостаточное количество товаров: {item.product}: \
+                    {item.colorproduct}. В наличии: {product_quantity.total}"
+                )
+        # Добаляем данные, чтобы не запрашивать их в методах create заново
+        data["carts"] = carts
+        data["product_quantities"] = product_quantities
+        data["shop"] = shop
+        return data
+
     @transaction.atomic
     def create(self, validated_data):
         user = validated_data["user"]
+        requires_delivery = validated_data["requires_delivery"]
+        payment_on_get = validated_data["payment_on_get"]
+        carts = validated_data["carts"]
+        product_quantities = validated_data["product_quantities"]
+        shop = validated_data["shop"]
 
         # Сохраняем данные в модель пользователя,
         # если этих данных еще нет
-        if not user.first_name:
-            user.first_name = validated_data["first_name"]
-        if not user.last_name:
-            user.last_name = validated_data["last_name"]
-        if not user.phone:
-            user.phone = validated_data["phone"]
-        user.save()
+        update_user_info(user=user, cleaned_data=validated_data)
 
-        # Получаем данные о корзинах пользователя
-        carts = ShoppingCart.objects.filter(user=user)
+        # Cоздаем заказ
+        order_data = {
+            "user": user,
+            "phone": validated_data["phone"],
+            "requires_delivery": requires_delivery,
+            "shop": shop,
+            "payment_on_get": payment_on_get,
+        }
+        if requires_delivery:
+            order_data["delivery_city"] = validated_data["delivery_city"]
+            order_data["delivery_adress"] = validated_data["delivery_adress"]
+        order = Order.objects.create(**order_data)
 
-        if carts.exists():
-            requires_delivery = validated_data["requires_delivery"]
-            payment_on_get = validated_data["payment_on_get"]
-            if requires_delivery:
-                # Ведем проверку по наличию товара на складе интернет магазина
-                shop = get_object_or_404(Shop, name__icontains="Склад")
-                order = Order.objects.create(
-                    user=user,
-                    phone=form.cleaned_data["phone"],
-                    requires_delivery=requires_delivery,
-                    delivery_city=form.cleaned_data["delivery_city"],
-                    delivery_adress=form.cleaned_data[
-                        "delivery_adress"
-                    ],
-                    shop=shop,
-                    payment_on_get=payment_on_get,
-                )
-            else:
-                shop = form.cleaned_data["shop"]
-                order = Order.objects.create(
-                    user=user,
-                    phone=form.cleaned_data["phone"],
-                    requires_delivery=requires_delivery,
-                    shop=shop,
-                    payment_on_get=payment_on_get,
-                )
+        # Формируем список товаров для этого заказа
+        # и список нового наличия в магазинах
+        orderproduct, shop_quantity = prepare_order_products(
+            carts, product_quantities, order
+        )
 
-            # Проверяем, есть ли товары из корзины пользователя
-            # в наличии в выбранном магазине
-            product_quantities = get_available_products(
-                user=user, shop=shop
-            )
-            if not product_quantities:
-                raise ValidationError(
-                    "В выбранном магазине товары отсутствуют. \
-                    Выберите другой магазин."
-                )
+        # Обновляем наличие в магазинах для всех позиций в заказе
+        ColorProductShop.objects.bulk_update(shop_quantity, ["quantity"])
 
-            # Формируем записи OrderProduct
-            orderproduct = []
-            shop_quantity = []
-            for item in carts:
-                product_quantity = product_quantities.get(
-                    item.colorproduct.id, None
-                )
-                # Проверяем доступен ли конкретный товар
-                # в выбранном магазине
-                if product_quantity is None:
-                    raise ValidationError(
-                        f"В выбранном магазине товар {item.product} \
-                        отсутствует. Выберите другой магазин."
-                    )
-                if product_quantity.total < item.quantity:
-                    raise ValidationError(
-                        f"Недостаточное количество товаров: \
-                            {item.product}: {item.colorproduct}. \
-                            В наличии: {product_quantity.total}"
-                    )
-                orderproduct.append(
-                    OrderProduct(
-                        order=order,
-                        product=item.product,
-                        colorproduct=item.colorproduct,
-                        price=item.product.actual_price,
-                        quantity=item.quantity,
-                    )
-                )
+        # Создаем записи в БД для всех позиций в заказе
+        OrderProduct.objects.bulk_create(orderproduct)
 
-                # Обновляем наличие товара в выбранном магазину
-                product_quantity.quantity -= item.quantity
-                # Формируем список для bulk_update
-                shop_quantity.append(product_quantity)
+        # Очищаем корзину пользователя
+        carts.delete()
 
-            # Обновляем наличие в магазинах для всех позиций в заказе
-            ColorProductShop.objects.bulk_update(
-                shop_quantity, ["quantity"]
-            )
-
-            # Создаем записи в БД для всех позиций в заказе
-            OrderProduct.objects.bulk_create(orderproduct)
-
-            # Очищаем корзину пользователя
-            carts.delete()
-
-            messages.success(request, "Заказ оформлен")
-            return redirect("main:index")
         return super().create(validated_data)
