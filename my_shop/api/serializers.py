@@ -10,11 +10,11 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from api.models import EmailCode
-from main.models import (Category, Color, ColorProduct, ColorProductShop,
-                         Country, Manufacturer, Product, Review, Shop)
-from orders.models import Order
-from orders.utils import (get_available_products, prepare_order_products,
-                          update_user_info)
+from api.orders_utils import update_user_info
+from main.models import (Category, ColorProduct, ColorProductShop, Country,
+                         Manufacturer, Product, Review, Shop)
+from orders.models import Order, OrderProduct
+from orders.utils import get_available_products, prepare_order_products
 from shopping_cart.models import ShoppingCart
 from users.constants import (CONFIRMATION_CODE_MAX_LENGTH, PASSWORD_MAX_LENGTH,
                              USERNAME_MAX_LENGTH)
@@ -159,6 +159,7 @@ class ProductDetailSerializer(ProductsListSerializer):
     manufacturer = ManufacturerSerializer()
     offline_shops_data = serializers.SerializerMethodField()
     internet_shop_data = serializers.SerializerMethodField()
+    reviews_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Product
@@ -173,7 +174,8 @@ class ProductDetailSerializer(ProductsListSerializer):
             "manufacturer",
             "offline_shops_data",
             "internet_shop_data",
-            "rating",
+            "average_rating",
+            "reviews_count",
         )
 
     def get_offline_shops_data(self, obj):
@@ -284,6 +286,7 @@ class ShoppingCartCreateSerializer(serializers.ModelSerializer):
 
 
 class ShoppingCartUpdateSerializer(serializers.ModelSerializer):
+    """Сериализатор для изменения корзины."""
 
     quantity = serializers.IntegerField(max_value=32767, min_value=1)
 
@@ -294,6 +297,7 @@ class ShoppingCartUpdateSerializer(serializers.ModelSerializer):
 
 
 class ShoppingCartListSerializer(serializers.ModelSerializer):
+    """Сериализатор для списка товаров в корзине."""
 
     color = serializers.SerializerMethodField()
     product_name = serializers.SerializerMethodField()
@@ -324,6 +328,14 @@ class ShoppingCartListSerializer(serializers.ModelSerializer):
         return obj.product.actual_price
 
 
+class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели пользователя."""
+
+    class Meta:
+        model = User
+        fields = ("first_name", "last_name", "phone")
+
+
 class OrderCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания заказа."""
 
@@ -336,15 +348,14 @@ class OrderCreateSerializer(serializers.ModelSerializer):
     shop = serializers.PrimaryKeyRelatedField(
         queryset=Shop.objects.all(), required=False
     )
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    requires_delivery = serializers.BooleanField(required=True)
+    user = UserSerializer()
 
     class Meta:
         model = Order
         fields = (
             "id",
-            "first_name",
-            "last_name",
-            "phone",
+            "user",
             "requires_delivery",
             "delivery_city",
             "delivery_adress",
@@ -352,16 +363,15 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             "payment_on_get",
             "is_paid",
             "status",
-            "user",
         )
         read_only_fields = ("id", "is_paid", "status")
 
     def validate(self, data):
         """
-        Проверяем, что у пользователя добавлены товары в корзину
+        Проверяем, что у пользователя добавлены товары в корзину,
         и нужное количество каждого товара есть в выбранном магазине.
         """
-        user = data.get("user")
+        user = self.context.get("request").user
         carts = ShoppingCart.objects.filter(user=user)
 
         if not carts.exists():
@@ -398,7 +408,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        user = validated_data["user"]
+        user = self.context.get("request").user
         requires_delivery = validated_data["requires_delivery"]
         payment_on_get = validated_data["payment_on_get"]
         carts = validated_data["carts"]
@@ -412,7 +422,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         # Cоздаем заказ
         order_data = {
             "user": user,
-            "phone": validated_data["phone"],
+            "phone": validated_data["user"]["phone"],
             "requires_delivery": requires_delivery,
             "shop": shop,
             "payment_on_get": payment_on_get,
@@ -437,4 +447,66 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         # Очищаем корзину пользователя
         carts.delete()
 
-        return super().create(validated_data)
+        return order
+
+
+class OrderProductSerializer(serializers.ModelSerializer):
+    """Сериализатор для товаров в заказе"""
+
+    product = serializers.SlugRelatedField(slug_field="name", read_only=True)
+    colorproduct = serializers.CharField(
+        source="colorproduct.color.name", read_only=True
+    )
+
+    class Meta:
+        model = OrderProduct
+        fields = ["price", "quantity", "product", "product_id", "colorproduct"]
+
+
+class OrderRetriveSerializer(serializers.ModelSerializer):
+    """Сериализатор для получения заказов пользователя."""
+
+    orderedproducts = OrderProductSerializer(many=True)
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            "id",
+            "user",
+            "created_at",
+            "requires_delivery",
+            "delivery_city",
+            "delivery_adress",
+            "shop",
+            "payment_on_get",
+            "is_paid",
+            "status",
+            "orderedproducts",
+        ]
+
+    def to_representation(self, instance):
+        rep = super(OrderRetriveSerializer, self).to_representation(instance)
+        # Если доставка не выбрана, то убираем адрес и город доставки из ответа
+        # Если доставка выбрана, то убираем магазин
+        if not rep["requires_delivery"]:
+            rep.pop("delivery_city")
+            rep.pop("delivery_adress")
+        else:
+            rep.pop("shop")
+        return rep
+
+
+class OrderListSerializer(serializers.ModelSerializer):
+    """Сериализатор для получения списка заказов пользователя."""
+
+    class Meta:
+        model = Order
+        fields = [
+            "id",
+            "created_at",
+            "requires_delivery",
+            "payment_on_get",
+            "is_paid",
+            "status",
+        ]

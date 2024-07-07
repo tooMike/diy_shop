@@ -1,27 +1,32 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count, OuterRef, Subquery, Sum
 from django.shortcuts import get_object_or_404
-from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import filters, status, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from api.code_schemas import product_detail_code_schema
 from api.mixins import ListViewSet, RetrieveViewSet
-from api.pagination import (CategoryManufacturerPagination, ProductsPagination,
-                            ReviewsPagination)
 from api.permissions import IsAdminStaffOwnerReadOnly, IsOwner
-from api.serializers import (CategorySerializer, EmailCodeSerializer,
-                             GetTokenSerializer, ManufacturerSerializer,
-                             ProductDetailSerializer, ProductsListSerializer,
-                             ReviewSerializer, ShoppingCartCreateSerializer,
-                             ShoppingCartListSerializer,
-                             ShoppingCartUpdateSerializer,
-                             UserRegistrationSerializer)
+from api.serializers import (
+    CategorySerializer,
+    EmailCodeSerializer,
+    GetTokenSerializer,
+    ManufacturerSerializer,
+    OrderCreateSerializer,
+    OrderListSerializer,
+    OrderRetriveSerializer,
+    ProductDetailSerializer,
+    ProductsListSerializer,
+    ReviewSerializer,
+    ShoppingCartCreateSerializer,
+    ShoppingCartListSerializer,
+    ShoppingCartUpdateSerializer,
+    UserRegistrationSerializer,
+)
 from api.user_auth_utils import get_tokens_for_user
 from main.filters import ProductFilter
 from main.models import Category, ColorProductShop, Manufacturer, Product
@@ -79,35 +84,6 @@ def get_token(request):
 class ProductsListViewSet(ListViewSet):
     """Представление для получения товаров."""
 
-    queryset = (
-        Product.objects.filter(
-            is_active=True,
-            # отдает только товары, которые есть в магазинах
-            colorproduct__colorproductshop__quantity__gt=0,
-        )
-        .select_related(
-            "manufacturer",
-            "category",
-        )
-        .annotate(
-            # Добавляем количество магазинов, где есть товар
-            num_shop=Count(
-                "colorproduct__colorproductshop__shop", distinct=True
-            ),
-            # Добавляем доступное количество товаров
-            num_products=Subquery(
-                ColorProductShop.objects.filter(
-                    colorproduct__product=OuterRef("pk")
-                )
-                .values("colorproduct__product")
-                .annotate(total=Sum("quantity"))
-                .values("total")
-            ),
-            # Добавляем средний рейтинг
-            rating=Avg("reviews__rating"),
-        )
-        .order_by("-rating")
-    )
     serializer_class = ProductsListSerializer
     filter_backends = (
         DjangoFilterBackend,
@@ -117,35 +93,57 @@ class ProductsListViewSet(ListViewSet):
     filterset_class = ProductFilter
     search_fields = ("name", "description")
     ordering_fields = ("name", "actual_price", "rating")
-    pagination_class = ProductsPagination
+    pagination_class = LimitOffsetPagination
 
-
-@method_decorator(
-    name="retrieve",
-    decorator=swagger_auto_schema(
-        responses={
-            200: openapi.Response(
-                "Product retrieved", product_detail_code_schema
+    def get_queryset(self):
+        queryset = (
+            Product.objects.filter(
+                is_active=True,
+                # отдает только товары, которые есть в магазинах
+                colorproduct__colorproductshop__quantity__gt=0,
             )
-        }
-    ),
-)
+            .select_related(
+                "manufacturer",
+                "category",
+            )
+            .annotate(
+                # Добавляем количество магазинов, где есть товар
+                num_shop=Count(
+                    "colorproduct__colorproductshop__shop", distinct=True
+                ),
+                # Добавляем доступное количество товаров
+                num_products=Subquery(
+                    ColorProductShop.objects.filter(
+                        colorproduct__product=OuterRef("pk")
+                    )
+                    .values("colorproduct__product")
+                    .annotate(total=Sum("quantity"))
+                    .values("total")
+                ),
+                # Добавляем средний рейтинг
+                rating=Avg("reviews__rating"),
+            )
+        )
+        return queryset
+
+
 class ProductViewSet(RetrieveViewSet):
     """Представление для получения информации о конкретном товаре."""
 
-    queryset = Product.objects.annotate(
-        rating=Avg("reviews__rating"),
-        reviews_count=Count("reviews"),
-    ).select_related("category", "manufacturer", "manufacturer__country")
     lookup_url_kwarg = "product_id"
     serializer_class = ProductDetailSerializer
 
-    # @action(detail=False)
-    # def reviews(self, request):
-    #     """Получение 5 последних отзывов о товаре."""
-    #     reviews = Review.objects.all()[:5]
-    #     serializer = ReviewSerializer(reviews, many=True)
-    #     return Response(serializer.data)
+    def get_queryset(self):
+        """Возвращаем только активные товары."""
+        return (
+            Product.objects.filter(is_active=True)
+            .annotate(
+                reviews_count=Count("reviews"),
+            )
+            .select_related(
+                "category", "manufacturer", "manufacturer__country"
+            )
+        )
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -153,7 +151,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     serializer_class = ReviewSerializer
     http_method_names = ["get", "post", "patch", "delete"]
-    pagination_class = ReviewsPagination
+    pagination_class = LimitOffsetPagination
     permission_classes = (IsAdminStaffOwnerReadOnly,)
     filter_backends = (filters.OrderingFilter, DjangoFilterBackend)
     ordering_fields = ("created_at", "rating")
@@ -162,8 +160,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def get_product(self):
         return get_object_or_404(Product, id=self.kwargs.get("product_id"))
 
-    # Получаем все отзывы, связанные с указанным товаром
     def get_queryset(self):
+        """Получаем только отзывы, связанные с выбранным товаром"""
         return self.get_product().reviews.all()
 
     # Добавляем автора в отзыв при сохранении
@@ -174,19 +172,25 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CategoriesViewSet(ListViewSet):
     """Представление для получения списка категорий."""
 
-    queryset = Category.objects.filter(is_active=True)
-    pagination_class = CategoryManufacturerPagination
+    pagination_class = LimitOffsetPagination
     serializer_class = CategorySerializer
     permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        """Возвращаем только активные категории."""
+        return Category.objects.filter(is_active=True)
 
 
 class ManufacturerViewSet(ListViewSet):
     """Представление для получения списка производителей."""
 
-    queryset = Manufacturer.objects.filter(is_active=True)
-    pagination_class = CategoryManufacturerPagination
+    pagination_class = LimitOffsetPagination
     serializer_class = ManufacturerSerializer
     permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        """Возвращаем только активных производителей."""
+        return Manufacturer.objects.filter(is_active=True)
 
 
 class ShoppingCartViewSet(viewsets.ModelViewSet):
@@ -194,6 +198,7 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
 
     permission_classes = (IsOwner,)
     http_method_names = ["get", "post", "patch", "delete"]
+    pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
         """Возвращаем только корзину текущего пользователя."""
@@ -215,15 +220,23 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             return (IsAuthenticated(),)
         return super().get_permissions()
-    
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     """Представление для заказов."""
 
     permission_classes = (IsOwner,)
     http_method_names = ["get", "post"]
+    pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
         """Возвращаем только заказы текущего пользователя."""
         return Order.objects.filter(user=self.request.user)
-    
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return OrderCreateSerializer
+        elif self.action == "retrieve":
+            return OrderRetriveSerializer
+        else:
+            return OrderListSerializer

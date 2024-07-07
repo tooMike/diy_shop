@@ -33,7 +33,7 @@ class Order(models.Model):
     )
     phone = models.CharField(verbose_name="Номер телефона", max_length=20)
     requires_delivery = models.BooleanField(
-        default=False, verbose_name="Требуется доставка"
+        verbose_name="Требуется доставка", default=False
     )
     delivery_city = models.CharField(
         max_length=30, verbose_name="Город доставки", null=True, blank=True
