@@ -104,24 +104,21 @@ class GetTokenSerializer(serializers.Serializer):
 class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор для категорий."""
 
-    is_active = serializers.BooleanField(write_only=True)
-
     class Meta:
         model = Category
-        fields = ("id", "name", "description", "slug", "is_active")
+        fields = ("id", "name", "description")
 
 
 class ManufacturerSerializer(serializers.ModelSerializer):
     """Сериализатор для производителей."""
 
-    is_active = serializers.BooleanField(write_only=True)
     country = serializers.SlugRelatedField(
         queryset=Country.objects.all(), slug_field="name"
     )
 
     class Meta:
         model = Manufacturer
-        fields = ("id", "name", "country", "slug", "is_active")
+        fields = ("id", "name", "country")
 
 
 class ProductsListSerializer(serializers.ModelSerializer):
@@ -140,6 +137,7 @@ class ProductsListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
+            "id",
             "name",
             "price",
             "sale",
@@ -157,6 +155,7 @@ class ProductDetailSerializer(ProductsListSerializer):
     """Сериализатор для конкретного товара."""
 
     manufacturer = ManufacturerSerializer()
+    category = CategorySerializer()
     offline_shops_data = serializers.SerializerMethodField()
     internet_shop_data = serializers.SerializerMethodField()
     reviews_count = serializers.IntegerField(read_only=True)

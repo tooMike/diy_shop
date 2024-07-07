@@ -17,7 +17,10 @@ router_v1.register(
     "order", api_view.OrderViewSet, basename="order"
 )
 router_v1.register(
-    r"product/(?P<product_id>\d+)/reviews",
+    "products", api_view.ProductsViewSet, basename="products"
+)
+router_v1.register(
+    r"products/(?P<product_id>\d+)/reviews",
     api_view.ReviewViewSet,
     basename="review",
 )
@@ -30,15 +33,5 @@ urlpatterns = [
     ),
     path("auth/sign_up/", api_view.user_signup, name="user_signup"),
     path("auth/token/", api_view.get_token, name="user_get_token"),
-    path(
-        "product/<int:product_id>/",
-        api_view.ProductViewSet.as_view({"get": "retrieve"}),
-        name="product_detail",
-    ),
-    path(
-        "products/",
-        api_view.ProductsListViewSet.as_view({"get": "list"}),
-        name="products_list",
-    ),
     path("", include(router_v1.urls)),
 ]

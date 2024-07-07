@@ -7,7 +7,7 @@ class ListViewSet(
     """Миксин для списковых представлений."""
 
 
-class RetrieveViewSet(
-    mixins.RetrieveModelMixin, viewsets.GenericViewSet
+class ListRetrieveViewSet(
+    mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
-    """Миксин для конкретного представления."""
+    """Миксин для детального и спискового представления."""

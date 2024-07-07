@@ -9,24 +9,17 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from api.mixins import ListViewSet, RetrieveViewSet
+from api.mixins import ListRetrieveViewSet, ListViewSet
 from api.permissions import IsAdminStaffOwnerReadOnly, IsOwner
-from api.serializers import (
-    CategorySerializer,
-    EmailCodeSerializer,
-    GetTokenSerializer,
-    ManufacturerSerializer,
-    OrderCreateSerializer,
-    OrderListSerializer,
-    OrderRetriveSerializer,
-    ProductDetailSerializer,
-    ProductsListSerializer,
-    ReviewSerializer,
-    ShoppingCartCreateSerializer,
-    ShoppingCartListSerializer,
-    ShoppingCartUpdateSerializer,
-    UserRegistrationSerializer,
-)
+from api.serializers import (CategorySerializer, EmailCodeSerializer,
+                             GetTokenSerializer, ManufacturerSerializer,
+                             OrderCreateSerializer, OrderListSerializer,
+                             OrderRetriveSerializer, ProductDetailSerializer,
+                             ProductsListSerializer, ReviewSerializer,
+                             ShoppingCartCreateSerializer,
+                             ShoppingCartListSerializer,
+                             ShoppingCartUpdateSerializer,
+                             UserRegistrationSerializer)
 from api.user_auth_utils import get_tokens_for_user
 from main.filters import ProductFilter
 from main.models import Category, ColorProductShop, Manufacturer, Product
@@ -81,10 +74,9 @@ def get_token(request):
     return Response(token, status=status.HTTP_200_OK)
 
 
-class ProductsListViewSet(ListViewSet):
-    """Представление для получения товаров."""
+class ProductsViewSet(ListRetrieveViewSet):
+    """Представление для товаров."""
 
-    serializer_class = ProductsListSerializer
     filter_backends = (
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -95,18 +87,23 @@ class ProductsListViewSet(ListViewSet):
     ordering_fields = ("name", "actual_price", "rating")
     pagination_class = LimitOffsetPagination
 
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ProductsListSerializer
+        else:
+            return ProductDetailSerializer
+
     def get_queryset(self):
-        queryset = (
-            Product.objects.filter(
-                is_active=True,
-                # отдает только товары, которые есть в магазинах
-                colorproduct__colorproductshop__quantity__gt=0,
-            )
-            .select_related(
-                "manufacturer",
-                "category",
-            )
-            .annotate(
+        queryset = Product.objects.filter(
+            is_active=True,
+            # Отдает только товары, которые есть в магазинах
+            colorproduct__colorproductshop__quantity__gt=0,
+        ).select_related(
+            "manufacturer",
+            "category",
+        )
+        if self.action == "list":
+            queryset = queryset.annotate(
                 # Добавляем количество магазинов, где есть товар
                 num_shop=Count(
                     "colorproduct__colorproductshop__shop", distinct=True
@@ -123,27 +120,12 @@ class ProductsListViewSet(ListViewSet):
                 # Добавляем средний рейтинг
                 rating=Avg("reviews__rating"),
             )
-        )
-        return queryset
-
-
-class ProductViewSet(RetrieveViewSet):
-    """Представление для получения информации о конкретном товаре."""
-
-    lookup_url_kwarg = "product_id"
-    serializer_class = ProductDetailSerializer
-
-    def get_queryset(self):
-        """Возвращаем только активные товары."""
-        return (
-            Product.objects.filter(is_active=True)
-            .annotate(
+        else:
+            queryset = queryset.annotate(
                 reviews_count=Count("reviews"),
-            )
-            .select_related(
-                "category", "manufacturer", "manufacturer__country"
-            )
-        )
+            ).select_related("manufacturer__country")
+
+        return queryset
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
