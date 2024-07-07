@@ -151,39 +151,43 @@ http://127.0.0.1:8000/redoc/ или http://127.0.0.1:8000/swagger/
 
 ```
 {
-    "id": 1,
-    "name": "Дрель Bosch",
-    "price": "5000.00",
-    "sale": 10,
-    "actual_price": "4500.00",
-    "image": "http://127.0.0.1:8000/media/product_images/default_image.png",
-    "category": "Дрели",
-    "manufacturer": {
-        "id": 1,
-        "name": "Bosch",
-        "country": "Германия",
-        "slug": "bosch"
-    },
-    "offline_shops_data": [
+  "id": 0,
+  "name": "string",
+  "price": "string",
+  "sale": 0,
+  "actual_price": "string",
+  "image": "https://example.com/image.jpg",
+  "category": {
+    "id": 0,
+    "name": "string",
+    "description": "string"
+  },
+  "manufacturer": {
+    "id": 0,
+    "name": "string",
+    "country": "string"
+  },
+  "offline_shops_data": [
+    {
+      "color": "string",
+      "color_id": 0,
+      "items": [
         {
-            "color": "Желтый",
-            "color_id": 4,
-            "items": [
-                {
-                    "shop": "Санкт-Петербург пр. Мира",
-                    "shop_id": 2,
-                    "quantity": 9
-                }
-            ]
+          "shop": "Санкт-Петербург пр. Мира",
+          "shop_id": 0,
+          "quantity": 0
         }
-    ],
-    "internet_shop_data": [
-        {
-            "color": "Черный",
-            "color_id": 5,
-            "quantity": 19
-        }
-    ],
-    "rating": 3.5
+      ]
+    }
+  ],
+  "internet_shop_data": [
+    {
+      "color": "string",
+      "color_id": 0,
+      "quantity": 0
+    }
+  ],
+  "average_rating": 0,
+  "reviews_count": 0
 }
 ```

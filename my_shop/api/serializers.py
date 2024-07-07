@@ -159,6 +159,7 @@ class ProductDetailSerializer(ProductsListSerializer):
     offline_shops_data = serializers.SerializerMethodField()
     internet_shop_data = serializers.SerializerMethodField()
     reviews_count = serializers.IntegerField(read_only=True)
+    average_rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Product

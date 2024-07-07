@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count, OuterRef, Subquery, Sum
 from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
@@ -9,6 +11,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from api.code_schemas import product_detail_code_schema
 from api.mixins import ListRetrieveViewSet, ListViewSet
 from api.permissions import IsAdminStaffOwnerReadOnly, IsOwner
 from api.serializers import (CategorySerializer, EmailCodeSerializer,
@@ -73,7 +76,16 @@ def get_token(request):
     token = get_tokens_for_user(user)
     return Response(token, status=status.HTTP_200_OK)
 
-
+@method_decorator(
+    name="retrieve",
+    decorator=swagger_auto_schema(
+        responses={
+            200: openapi.Response(
+                "Product retrieved", product_detail_code_schema
+            )
+        }
+    )
+)
 class ProductsViewSet(ListRetrieveViewSet):
     """Представление для товаров."""
 

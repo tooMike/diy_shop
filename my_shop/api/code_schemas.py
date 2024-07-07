@@ -6,8 +6,15 @@ manufacturer_schema = openapi.Schema(
         "id": openapi.Schema(type=openapi.TYPE_INTEGER),
         "name": openapi.Schema(type=openapi.TYPE_STRING),
         "country": openapi.Schema(type=openapi.TYPE_STRING),
-        "slug": openapi.Schema(type=openapi.TYPE_STRING),
-        "is_active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+    },
+)
+
+category_schema = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    properties={
+        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+        "name": openapi.Schema(type=openapi.TYPE_STRING),
+        "description": openapi.Schema(type=openapi.TYPE_STRING),
     },
 )
 
@@ -53,7 +60,7 @@ product_detail_code_schema = openapi.Schema(
         "image": openapi.Schema(
             type=openapi.TYPE_STRING, example="https://example.com/image.jpg"
         ),
-        "category": openapi.Schema(type=openapi.TYPE_STRING),
+        "category": category_schema,
         "manufacturer": manufacturer_schema,
         "offline_shops_data": openapi.Schema(
             type=openapi.TYPE_ARRAY, items=offline_shops_data_schema
@@ -61,7 +68,8 @@ product_detail_code_schema = openapi.Schema(
         "internet_shop_data": openapi.Schema(
             type=openapi.TYPE_ARRAY, items=internet_shop_data
         ),
-        "rating": openapi.Schema(type=openapi.TYPE_INTEGER),
+        "average_rating": openapi.Schema(type=openapi.TYPE_INTEGER),
+        "reviews_count": openapi.Schema(type=openapi.TYPE_INTEGER),
     },
     required=["product_id"],
 )
