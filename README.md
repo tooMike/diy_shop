@@ -46,6 +46,12 @@ docker compose exec backend python manage.py collectstatic
 docker compose exec backend python manage.py migrate
 ```
 
+Запустить Celery в контейнере backend:
+
+```
+docker compose exec backend celery -A my_shop worker --loglevel=info
+```
+
 Проект будет доступен по адресу
 
 ```
