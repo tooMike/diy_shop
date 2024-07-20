@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
-from django.core.mail import send_mail
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView
@@ -9,6 +8,7 @@ from django.views.generic import CreateView, UpdateView
 from shopping_cart.models import ShoppingCart
 from users.forms import (CodeVerificationForm, CustomUserCreationForm,
                          CustomUserUpdateForm, EmailVerificationForm)
+from users.tasks import send_email_task
 from users.user_auth_utils import create_confirmation_code
 from users.views_mixins import UserNotAuthenticatedMixin
 
@@ -30,7 +30,7 @@ def email_verification(request):
         confirmation_code = create_confirmation_code()
         # Получаем email пользователя
         user_email = form.cleaned_data["email"]
-        send_mail(
+        send_email_task.delay(
             subject="Регистрация на сайте ShoppingOnline",
             message=f"""
             Подтверждение регистрации для пользователя: {user_email}
@@ -38,7 +38,6 @@ def email_verification(request):
             """,
             from_email="sir.petri-petrov@yandex.ru",
             recipient_list=[user_email],
-            fail_silently=True,
         )
         # Сохраняем код в сессии
         request.session["confirmation_code"] = confirmation_code
