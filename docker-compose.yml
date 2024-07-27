@@ -34,8 +34,3 @@ services:
     volumes:
       - media:/media
       - static:/backend_static
-
-  smtp:
-    build: ./smtp/
-    ports:
-      - "25:25"
